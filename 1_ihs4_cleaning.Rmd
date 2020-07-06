@@ -1,0 +1,280 @@
+---
+title: "ihs4_cleaning"
+author: "Kevin Tang"
+date: "3/3/2020"
+output: html_document
+---
+
+```{r}
+#--- Load libraries - reminder to always load tidyverse last
+library(epiDisplay)
+library(plyr)
+library(magrittr)
+library(foreign)
+library(psych)
+library(readxl)
+library(tidyverse)
+
+#--- Change to show no scientific notation & round to 3 decimal places
+options(scipen = 10, digits=3) 
+
+#--- Set the plot theme to come out in black and white
+theme_set(theme_bw())
+
+#--- Read in the file
+ihs4 <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/hces/mwi/ihs2016/hh_mod_g1.csv")
+fcode <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/analysis/mwi_ihs4/mwi_item_code.csv")
+ucode <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/analysis/mwi_ihs4/mwi_unit_code.csv")
+```
+
+>CHANGE VARIABLE NAMES AND DATA CLASS
+
+Codebook (https://microdata.worldbank.org/index.php/catalog/2939/datafile/F192)
+
+id =            case_id              purc_quant =    hh_g04a              gift_quant =    hh_g04a
+consYN =        hh_g01               purc_unitA =    hh_g04b              gift_unitA =    hh_g04b
+item_code =     hh_g02               purc_unit =     hh_g04b_label        gift_unit =     hh_g04b_label
+item_oth =      hh_g01_oth           purc_unit_oth = hh_g04b_oth          gift_unit_oth = hh_g04b_oth
+                                     purc_unit_size= hh_g04c              gift_unit_size= hh_g04c
+                                     purc_price =    hh_g05
+             
+cons_quant =    hh_g03a              prod_quant =    hh_g06a
+cons_unitA =    hh_g03b              prod_unitA =    hh_g06b
+cons_unit =     hh_g03b_label        prod_unit =     hh_g06b_label
+cons_unit_oth = hh_g03b_oth          prod_unit_oth = hh_g06b_oth
+cons_unit_size= hh_g03c              prod_unit_size= hh_g06c
+
+```{r}
+
+#Summary info
+names(ihs4)[names(ihs4) == 'case_id'] <- 'id'
+names(ihs4)[names(ihs4) == 'hh_g01'] <- 'consYN'
+names(ihs4)[names(ihs4) == 'hh_g02'] <- 'item_code'
+names(ihs4)[names(ihs4) == 'hh_g01_oth'] <- 'item_oth'
+
+ihs4$id <- as.character(ihs4$id)
+ihs4$consYN <- as.factor(ihs4$consYN)
+ihs4$item_code <- as.factor(ihs4$item_code)
+ihs4$item_oth <- as.factor(ihs4$item_oth)
+
+#G03: Quantity and units consumed of each food 
+names(ihs4)[names(ihs4) == 'hh_g03a'] <- 'cons_quant'
+names(ihs4)[names(ihs4) == 'hh_g03b'] <- 'cons_unitA'
+names(ihs4)[names(ihs4) == 'hh_g03b_label'] <- 'cons_unit'
+names(ihs4)[names(ihs4) == 'hh_g03b_oth'] <- 'cons_unit_oth'
+names(ihs4)[names(ihs4) == 'hh_g03c'] <- 'cons_unit_size'
+
+ihs4$cons_quant <- as.numeric(ihs4$cons_quant)
+ihs4$cons_unitA <- as.factor(ihs4$cons_unitA)
+ihs4$cons_unit <- as.factor(ihs4$cons_unit)
+ihs4$cons_unit_oth <- as.factor(ihs4$cons_unit_oth)
+ihs4$cons_unit_size <- as.factor(ihs4$cons_unit_size)
+
+
+#G04: Quantity and units purchased of each food 
+names(ihs4)[names(ihs4) == 'hh_g04a'] <- 'purc_quant'
+names(ihs4)[names(ihs4) == 'hh_g04b'] <- 'purc_unitA'
+names(ihs4)[names(ihs4) == 'hh_g04b_label'] <- 'purc_unit'
+names(ihs4)[names(ihs4) == 'hh_g04b_oth'] <- 'purc_unit_oth'
+names(ihs4)[names(ihs4) == 'hh_g04c'] <- 'purc_unit_size'
+names(ihs4)[names(ihs4) == 'hh_g05'] <- 'purc_price'
+
+ihs4$purc_quant <- as.numeric(ihs4$purc_quant)
+ihs4$purc_unitA <- as.factor(ihs4$purc_unitA)
+ihs4$purc_unit <- as.factor(ihs4$purc_unit)
+ihs4$purc_unit_oth <- as.factor(ihs4$purc_unit_oth)
+ihs4$purc_unit_size <- as.factor(ihs4$purc_unit_size)
+ihs4$purc_price <- as.numeric(ihs4$purc_price)
+
+#G06: Quantity and units home produced of each food 
+names(ihs4)[names(ihs4) == 'hh_g06a'] <- 'prod_quant'
+names(ihs4)[names(ihs4) == 'hh_g06b'] <- 'prod_unitA'
+names(ihs4)[names(ihs4) == 'hh_g06b_label'] <- 'prod_unit'
+names(ihs4)[names(ihs4) == 'hh_g06b_oth'] <- 'prod_unit_oth'
+names(ihs4)[names(ihs4) == 'hh_g06c'] <- 'prod_unit_size'
+
+ihs4$prod_quant <- as.numeric(ihs4$prod_quant)
+ihs4$prod_unitA <- as.factor(ihs4$prod_unitA)
+ihs4$prod_unit <- as.factor(ihs4$prod_unit)
+ihs4$prod_unit_oth <-as.factor(ihs4$prod_unit_oth)
+ihs4$prod_unit_size <- as.factor(ihs4$prod_unit_size)
+
+#G07: Quantity and units gifted/other source of each food 
+names(ihs4)[names(ihs4) == 'hh_g07a'] <- 'gift_quant'
+names(ihs4)[names(ihs4) == 'hh_g07b'] <- 'gift_unitA'
+names(ihs4)[names(ihs4) == 'hh_g07b_label'] <- 'gift_unit'
+names(ihs4)[names(ihs4) == 'hh_g07b_oth'] <- 'gift_unit_oth'
+names(ihs4)[names(ihs4) == 'hh_g07c'] <- 'gift_unit_size'
+
+ihs4$gift_quant <- as.numeric(ihs4$gift_quant)
+ihs4$gift_unitA <- as.factor(ihs4$gift_unitA)
+ihs4$gift_unit <- as.factor(ihs4$gift_unit)
+ihs4$gift_unit_oth <- as.factor(ihs4$gift_unit_oth)
+ihs4$gift_unit_size <- as.factor(ihs4$gift_unit_size)
+```
+
+>MERGE IN UNIT AND ITEM LABELS
+
+```{r}
+ihs4 <- merge(x=ihs4, y=fcode, by.x='item_code', by.y='code', fill=-9999, all.x = TRUE)
+ihs4 <- merge(x=ihs4, y=ucode, by.x='cons_unit', by.y='code', fill=-9999, all.x = TRUE)
+ihs4 <- ihs4 %>% arrange(cons_unit) %>% arrange(item_code) %>% arrange(HHID)
+ihs4 <- ihs4 %>% select(id:consYN, item_code, item, item_oth:cons_unitA, cons_unit, unit, cons_unit_oth:gift_unit_size)
+```
+
+
+>CLEANING UNITS LABELLED AS "OTHER"
+
+There are a number of item units recorded as "23" but described as existing ucodes in our codebook.
+We need to change these units from "23" to their appropriate units as in this analysis any item without a standard unit will be excluded. 
+```{r}
+ihs4 %>% filter(cons_unitA==23)
+ihs4 %>% filter(cons_unit_oth!= "") %>% count(cons_unit_oth) %>% arrange(desc(n)) #which units are listed as "other"
+ihs4 %>% filter(cons_unitA==23) %>% count(cons_unit_oth) %>% arrange(desc(n)) #which units are listed as "other" have not been converted to standard unit
+
+ihs4 %>% filter(., cons_unit_oth=="HEAP") %>% select(item, item_code, cons_quant, cons_unitA, cons_unit, cons_unit_oth) %>% arrange(item)
+ihs4 %>% filter(item_code=="803") %>% select(item, item_code, cons_quant, cons_unitA, cons_unit, cons_unit_oth) %>% arrange(desc(cons_unitA))
+
+```
+
+```{r}
+ihs4[ihs4$cons_unit_oth == "HEAP", "cons_unitA"] <- 10
+ihs4[ihs4$cons_unit_oth == "GRAMS", "cons_unitA"] <- 18
+ihs4[ihs4$cons_unit_oth == "KILOGRAM", "cons_unitA"] <- 1
+ihs4[ihs4$cons_unit_oth == "PAIL", "cons_unitA"] <- 4
+ihs4[ihs4$cons_unit_oth == "TUBE /SACHET", "cons_unitA"] <- 22
+ihs4[ihs4$cons_unit_oth == "SATCHET (MEDIUM)", "cons_unitA"] <- 42
+ihs4[ihs4$cons_unit_oth == "HEAP (SMALL)", "cons_unitA"] <- 10
+ihs4[ihs4$cons_unit_oth == "BUNDLE", "cons_unitA"] <- 8
+ihs4[ihs4$cons_unit_oth == "HEAP (LARGE)", "cons_unitA"] <- "10C"
+ihs4[ihs4$cons_unit_oth == "TABLESPOON", "cons_unitA"] <- 50
+ihs4[ihs4$cons_unit_oth == "5L BUCKET", "cons_unitA"] <- 26
+ihs4[ihs4$cons_unit_oth == "TUBE (MEDIUM)", "cons_unitA"] <- 42
+ihs4[ihs4$cons_unit_oth == "PAIL (SMALL)", "cons_unitA"] <- 4
+ihs4[ihs4$cons_unit_oth == "TEASPOON", "cons_unitA"] <- 20
+ihs4[ihs4$cons_unit_oth == "HEAP (MEDIUM)", "cons_unitA"] <- 10
+ihs4[ihs4$cons_unit_oth == "PACKET 100 GRAM", "cons_unitA"] <- 34
+ihs4[ihs4$cons_unit_oth == "PAIL (LARGE)", "cons_unitA"] <- 4
+ihs4[ihs4$cons_unit_oth == "TUBE (LARGE)", "cons_unitA"] <- 43
+ihs4[ihs4$cons_unit_oth == "PACKET 150 GRAM", "cons_unitA"] <- 34
+ihs4[ihs4$cons_unit_oth == "PIECE (SMALL)", "cons_unitA"] <- "9A"
+ihs4[ihs4$cons_unit_oth == "PIECES", "cons_unitA"] <- 9
+ihs4[ihs4$cons_unit_oth == "NO. 12 PLATE", "cons_unitA"] <- 7
+ihs4[ihs4$cons_unit_oth == "SATCHET (LARGE)", "cons_unitA"] <- 43
+ihs4[ihs4$cons_unit_oth == "PIECE MEDIUM", "cons_unitA"] <- "9B"
+ihs4[ihs4$cons_unit_oth == "PIECE", "cons_unitA"] <- 9
+ihs4[ihs4$cons_unit_oth == "NO. 10 PLATE", "cons_unitA"] <- 6
+ihs4[ihs4$cons_unit_oth == "5 LITRES", "cons_unitA"] <- 26
+ihs4[ihs4$cons_unit_oth == "PAIL (MEDIUM)", "cons_unitA"] <- "4B"
+ihs4[ihs4$cons_unit_oth == "PIECE (LARGE)", "cons_unitA"] <- "9C"
+ihs4[ihs4$cons_unit_oth == "MANGO", "cons_unitA"] <- 9
+ihs4[ihs4$cons_unit_oth == "PACKET (SMALL)", "cons_unitA"] <- 54
+ihs4[ihs4$cons_unit_oth == "SATCHET (250 GRAM)", "cons_unitA"] <- 65
+ihs4[ihs4$cons_unit_oth == "SATCHET (20 GRAM)", "cons_unitA"] <- 41
+ihs4[ihs4$cons_unit_oth == "TIN", "cons_unitA"] <- 72
+ihs4[ihs4$cons_unit_oth == "PIECE (MEDIUM)", "cons_unitA"] <- "9B"
+ihs4[ihs4$cons_unit_oth == "PACKET 250 GRAM", "cons_unitA"] <- 65
+ihs4[ihs4$cons_unit_oth == "PACKETS", "cons_unitA"] <- 60
+ihs4[ihs4$cons_unit_oth == "TIN (500G)", "cons_unitA"] <- 73
+ihs4[ihs4$cons_unit_oth == "SACHET", "cons_unitA"] <- 22
+ihs4[ihs4$cons_unit_oth == "SATCHET (MEDIUM)", "cons_unitA"] <- 22
+ihs4[ihs4$cons_unit_oth == "SATCHET (500 GRAM)", "cons_unitA"] <- 22
+ihs4[ihs4$cons_unit_oth == "SATCHET (SMALL)", "cons_unitA"] <- 22
+ihs4[ihs4$cons_unit_oth == "SATCHET (150 GRAM)", "cons_unitA"] <- 43
+ihs4[ihs4$cons_unit_oth == "BOTTLE" & ihs4$item_code == "803", "cons_unitA"] <- 15
+
+ihs4[ihs4$cons_unit_oth == "HEAP", "cons_unit"] <- 10
+ihs4[ihs4$cons_unit_oth == "GRAMS", "cons_unit"] <- 18
+ihs4[ihs4$cons_unit_oth == "KILOGRAM", "cons_unit"] <- 1
+ihs4[ihs4$cons_unit_oth == "PAIL", "cons_unit"] <- 4
+ihs4[ihs4$cons_unit_oth == "TUBE /SACHET", "cons_unit"] <- 22
+ihs4[ihs4$cons_unit_oth == "SATCHET (MEDIUM)", "cons_unit"] <- 42
+ihs4[ihs4$cons_unit_oth == "HEAP (SMALL)", "cons_unit"] <- 10
+ihs4[ihs4$cons_unit_oth == "BUNDLE", "cons_unit"] <- 8
+ihs4[ihs4$cons_unit_oth == "HEAP (LARGE)", "cons_unit"] <- 10
+ihs4[ihs4$cons_unit_oth == "TABLESPOON", "cons_unit"] <- 50
+ihs4[ihs4$cons_unit_oth == "5L BUCKET", "cons_unit"] <- 26
+ihs4[ihs4$cons_unit_oth == "TUBE (MEDIUM)", "cons_unit"] <- 42
+ihs4[ihs4$cons_unit_oth == "PAIL (SMALL)", "cons_unit"] <- 4
+ihs4[ihs4$cons_unit_oth == "TEASPOON", "cons_unit"] <- 20
+ihs4[ihs4$cons_unit_oth == "HEAP (MEDIUM)", "cons_unit"] <- 10
+ihs4[ihs4$cons_unit_oth == "PACKET 100 GRAM", "cons_unit"] <- 34
+ihs4[ihs4$cons_unit_oth == "PAIL (LARGE)", "cons_unit"] <- 4
+ihs4[ihs4$cons_unit_oth == "TUBE (LARGE)", "cons_unit"] <- 43
+ihs4[ihs4$cons_unit_oth == "PACKET 150 GRAM", "cons_unit"] <- 34
+ihs4[ihs4$cons_unit_oth == "PIECE (SMALL)", "cons_unit"] <- 9
+ihs4[ihs4$cons_unit_oth == "PIECES", "cons_unit"] <- 9
+ihs4[ihs4$cons_unit_oth == "NO. 12 PLATE", "cons_unit"] <- 7
+ihs4[ihs4$cons_unit_oth == "SATCHET (LARGE)", "cons_unit"] <- 43
+ihs4[ihs4$cons_unit_oth == "PIECE MEDIUM", "cons_unit"] <- 9
+ihs4[ihs4$cons_unit_oth == "PIECE", "cons_unit"] <- 9
+ihs4[ihs4$cons_unit_oth == "NO. 10 PLATE", "cons_unit"] <- 6
+ihs4[ihs4$cons_unit_oth == "5 LITRES", "cons_unit"] <- 26
+ihs4[ihs4$cons_unit_oth == "PAIL (MEDIUM)", "cons_unit"] <- 4
+ihs4[ihs4$cons_unit_oth == "PIECE (LARGE)", "cons_unit"] <- 9
+ihs4[ihs4$cons_unit_oth == "MANGO", "cons_unit"] <- 9
+ihs4[ihs4$cons_unit_oth == "PACKET (SMALL)", "cons_unit"] <- 54
+ihs4[ihs4$cons_unit_oth == "SATCHET (250 GRAM)", "cons_unit"] <- 65
+ihs4[ihs4$cons_unit_oth == "SATCHET (20 GRAM)", "cons_unit"] <- 41
+ihs4[ihs4$cons_unit_oth == "TIN", "cons_unit"] <- 72
+ihs4[ihs4$cons_unit_oth == "PIECE (MEDIUM)", "cons_unit"] <- 9
+ihs4[ihs4$cons_unit_oth == "PACKET 250 GRAM", "cons_unit"] <- 65
+ihs4[ihs4$cons_unit_oth == "PACKETS", "cons_unit"] <- 60
+ihs4[ihs4$cons_unit_oth == "TIN (500G)", "cons_unit"] <- 73
+ihs4[ihs4$cons_unit_oth == "SACHET", "cons_unit"] <- 22
+ihs4[ihs4$cons_unit_oth == "SATCHET (MEDIUM)", "cons_unit"] <- 22
+ihs4[ihs4$cons_unit_oth == "SATCHET (500 GRAM)", "cons_unit"] <- 22
+ihs4[ihs4$cons_unit_oth == "SATCHET (SMALL)", "cons_unit"] <- 22
+ihs4[ihs4$cons_unit_oth == "SATCHET (150 GRAM)", "cons_unit"] <- 43
+ihs4[ihs4$cons_unit_oth == "BOTTLE" & ihs4$item_code == "803", "cons_unit"] <- 15
+```
+
+>CLEANING UNITS LABELLED AS "OTHER"
+
+```{r}
+item_other <- ihs4 %>% count(item_oth) %>% arrange(desc(n))
+
+ihs4 %>% filter(item_oth=="BIRD")
+```
+
+```{r}
+ihs4$item_code[ihs4$item_oth=='BAKED AFRICAN CAKE'] <- 836
+ihs4$item_code[ihs4$item_oth=='GRAIN MEAL'] <- 101
+ihs4$item_code[ihs4$item_oth=='GRANMILL'] <- 101
+ihs4$item_code[ihs4$item_oth=='MANDASI'] <- 827
+ihs4$item_code[ihs4$item_oth=='PORK'] <- 506
+ihs4$item_code[ihs4$item_oth=='PEANUT'] <- 304  
+ihs4$item_code[ihs4$item_oth=='PIGEON PEAS'] <- 303  
+ihs4$item_code[ihs4$item_oth=='CUCUMBER'] <- 409  
+ihs4$item_code[ihs4$item_oth=='SMALL FISH'] <- 5023   
+ihs4$item_code[ihs4$item_oth=='SODA'] <- 907 
+ihs4$item_code[ihs4$item_oth=='FRIED MIXTURE OF MAIZE FLOUR/BANANA AND SODA'] <- 827 
+ihs4$item_code[ihs4$item_oth=='MIXTURE OF MAIZE FLOUR/BANANA/SUGAR'] <- 827 
+ihs4$item_code[ihs4$item_oth=='IRISH POTATOES AND FLOUR'] <- 821
+ihs4$item_code[ihs4$item_oth=='SCONES'] <- 112 
+ihs4$item_code[ihs4$item_oth=='WINE'] <- 914
+ihs4$item_code[ihs4$item_oth=='TEA'] <- 901
+ihs4$item_code[ihs4$item_oth=='BIRD'] <- 509
+ihs4$item_code[ihs4$item_oth=='DUCKMEAT'] <- 509
+ihs4$item_code[ihs4$item_oth=='COW PEAS'] <- 308
+ihs4$item_code[ihs4$item_oth=='BONONGWE'] <- 403
+ihs4$item_code[ihs4$item_oth=='CASSAVA LEAVES'] <- 406
+ihs4$item_code[ihs4$item_oth=='CHIKONDAMOYO'] <- 836
+ihs4$item_code[ihs4$item_oth=='CHISOSOANDBONONGWE'] <- 403
+ihs4$item_code[ihs4$item_oth=='FRESHBEANS'] <- 302
+ihs4$item_code[ihs4$item_oth=='GROUND AND COOKED BEANS'] <- 302
+ihs4$item_code[ihs4$item_oth=='MAIZEMEAL'] <- 101
+ihs4$item_code[ihs4$item_oth=='SOYA'] <- 314
+
+```
+
+> MISC. CLEANING FUNCTIONS
+
+Create unique ID variable
+```{r}
+ihs4$measure_id <- paste0(as.character(ihs4$item_code),"_", as.character(ihs4$cons_unitA))
+ihs4$measure_id[is.na(ihs4$cons_unit)] <- NA
+
+write.csv(ihs4, "/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/hces/mwi/ihs2016/hh_mod_g_clean.csv")
+```
+
