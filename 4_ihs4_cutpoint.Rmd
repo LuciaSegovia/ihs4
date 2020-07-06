@@ -1,0 +1,97 @@
+---
+title: "ihs4"
+author: "Kevin Tang"
+date: "6/23/2020"
+output: html_document
+---
+
+```{r}
+
+library(epiDisplay)
+library(plyr)
+library(magrittr)
+library(foreign)
+library(psych)
+library(readxl)
+library(tidyverse)
+```
+
+Convert Non-Standard Units to KGs (data = NSU factors, HH regions)
+```{r}
+ihs4 <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/hces/mwi/ihs2016/hh_mod_g_clean.csv")
+
+unit_conv <-read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/hces/mwi/unit_factors/ihs4factors_v5.csv")
+
+hh_id <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/hces/mwi/ihs2016/hh_mod_a_filt.csv")
+region <- hh_id %>% select(case_id, region)
+
+ihs4 <- merge(x=ihs4, y=unit_conv , by.x='measure_id', by.y='measure_id', fill=-9999, all.x = TRUE) %>% arrange(item_code) %>% arrange(id)
+
+ihs4 <- merge(x=ihs4, y=region , by.x='id', by.y='case_id', fill=-9999, all.x = TRUE) %>% arrange(item_code) %>% arrange(id)
+
+ihs4$factor_n <- ifelse(ihs4$region == 1, ihs4$factor_n, NA)
+ihs4$factor_c <- ifelse(ihs4$region == 2, ihs4$factor_c, NA)
+ihs4$factor_s <- ifelse(ihs4$region == 3, ihs4$factor_s, NA)
+ihs4$factor <- rowSums(ihs4[,c("factor_n", "factor_c", "factor_s")], na.rm=TRUE)
+ihs4 <- ihs4 %>% select(-factor_n, -factor_c, -factor_s)
+
+ihs4$cons_kg <-ihs4$factor*ihs4$cons_quant
+
+write.csv(ihs4, "/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/hces/mwi/ihs2016/hh_mod_g_kg.csv")
+
+```
+
+Manage outliers #1: eliminate by excess food item intake (data = HH roster)
+```{r}
+hh_roster <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/hces/mwi/ihs2016/hh_mod_b.csv")
+percapita <- hh_roster %>% count(HHID)
+
+ihs4 <- merge(x=ihs4, y=percapita, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4$kg_pc_d <- ihs4$cons_kg/ihs4$pc/7
+
+ihs4 %>% filter(item_code==202) %>% ggplot(., aes(x=kg_pc_d)) + 
+  geom_histogram() +
+  theme_bw()
+
+```
+
+Non-edible portions of food items (data = non-edible factors)
+```{r}
+
+```
+
+Adjustment for yield (data = yeild factors or moisture weight)
+```{r}
+
+```
+
+Food composition of food items (data = food composition tables)
+```{r}
+
+```
+
+Manage outliers #2 (aggregate by total energy intake)
+```{r}
+
+```
+
+Account for bioavailability
+```{r}
+
+```
+
+
+```{r}
+ihs4_health <-read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/hces/mwi/ihs2016/hh_mod_d.csv")
+
+ihs4_health %>% count(hh_d05a)
+ihs4_health %>% filter(hh_d05a==30) %>% count(case_id) %>% arrange(n)
+
+ihs4_health %>% count(hh_d05b)
+ihs4_health %>% filter(hh_d05b==30) %>% count(case_id) %>% arrange(n)
+ihs4_health %>% count(hh_d05_oth)
+
+
+glimpse(ihs4)
+```
+

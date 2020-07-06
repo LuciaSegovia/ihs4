@@ -1,0 +1,73 @@
+---
+title: "ihs3_vita"
+author: "Kevin Tang"
+date: "2/11/2020"
+output: html_document
+---
+
+IMPORT DATA
+```{r}
+ihs3 <- read.csv('/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/analysis/mwi_ihs3/tblFoodConsumption_constrained.csv')
+
+ihs3_hh <- read.csv('/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/analysis/mwi_ihs3/tblHouseHoldInfo.csv')
+
+fct3 <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/analysis/mwi_ihs4/food_comp_tbls/ihs_fct_v2.csv")
+
+ihs3_m <- merge(x=ihs3, y=fct3 , by.x='FoodItemCode', by.y='fcode', fill=-9999, all.x = TRUE) %>% arrange(Case_ID)
+
+```
+
+Calculate consumption of VitA-RAE per day per HH per food item
+```{r}
+#Convert quantity of food item eaten from g to kg
+ihs3_m$item_qty_hh_week_kg <- ihs3_m$QtyConsumedPerHHPwk/1000
+
+#ADJUST BY PROPORTION OF DISCARDED WASTE 
+
+#Convert to dry weight
+ihs3_m$dry_weight <- ihs3_m$item_qty_hh_week_kg * ((100-ihs3_m$water_f)/100) 
+
+#Convert RAE factors from mmg/100g to mg/kg
+ihs3_m$vita_rae_f_mg <- ihs3_m$vita_rae_f * 0.01
+
+#FOOD COMPOSITION DRY WEIGHT CONVERSION HERE
+
+# Calculate mg of VitA consumed per week per HH per food item 
+ihs3_m$rae_hh_item <- ihs3_m$dry_weight * ihs3_m$vita_rae_f_mg
+
+ihs3_m %>% select(item, QtyConsumedPerHHPwk, item_qty_hh_week_kg, dry_weight, vita_rae_f, vita_rae_f_mg, rae_hh_item)
+
+```
+
+```{r}
+#Sum total mg of VitA consumed per week per HH
+ihs3_hh_vita <-aggregate(ihs3_m$rae_hh_item, by=list(Case_ID=ihs3_m$Case_ID), FUN=sum)
+colnames(ihs3_hh_vita )[2] <- "rae_hh"
+
+#merge HH VitA consumption df with HH demographics df
+vita_hh <-merge(x=ihs3_hh, y=ihs3_hh_vita , by.x='case_id', by.y='Case_ID', fill=-9999, all.x = TRUE) %>% arrange(rae_hh)
+
+#Convert from (mg VitA consumed per week per HH) to (mg VitA consumed per day per HH)
+vita_hh$rae_hh_day <- vita_hh$rae_hh/7
+
+#Convert from (mg of VitA consumed per day per HH) to (mg of VitA consumed per day per AME)
+vita_hh$rae_ame_day <- vita_hh$rae_hh_day/vita_hh$adulteq
+
+vita_hh %>% select(case_id, rae_hh, rae_hh_day, rae_ame_day, adulteq)
+
+```
+
+Compare HH-VitA-RAE per day with EAR and RNI
+```{r}
+ihs3_vita_ref <- read.csv('/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/analysis/mwi_ihs3/qryEAR_vs_Consumption_HHinfo.csv')
+
+hh_vita_ref2 <- merge(x=vita_hh, y=ihs3_vita_ref , by.x='case_id', by.y='case_id', fill=-9999, all.x = TRUE) 
+
+hh_vita_ref2
+
+hh_vita_ref2 %>% select(case_id, rae_hh, rae_hh_day, rae_ame_day, hh_vita_rae, hh_ear, hh_rda, quintil.x)
+
+boxplot(rae_ame_day ~ quintil.x, data = hh_vita_ref2, frame = FALSE,
+        notch = TRUE, axes=TRUE, outline=FALSE, ylim=c(0,1.2), xlab="Socioeconomic Quintile", ylab="VitA RAE from Milk Products (mg/AME/day)")
+```
+
