@@ -1,0 +1,94 @@
+---
+title: "nonstandardunits"
+author: "Kevin Tang"
+date: "11/11/2020"
+output: html_document
+---
+
+> Packages
+
+```{r}
+
+library(epiDisplay)
+library(plyr)
+library(magrittr)
+library(foreign)
+library(psych)
+library(tidyverse)
+
+options(digits=2)
+
+```
+
+>Data
+
+```{r}
+ihs4 <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/hces/mwi/ihs2016/hh_mod_g_clean.csv")
+
+nsu.factors <-read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/model/mwi/data/cleaning/nsu.factors.csv")
+
+hh_id <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/hces/mwi/ihs2016/hh_mod_a_filt.csv")
+
+```
+
+
+>Convert Non-Standard Units to KGs
+
+Objective: to convert all food consumption quantities reported in NSU into KGs consumed of each food item. 
+
+Background: The first chunck of code converts the HCES food consumption data from both standard (e.g. mL, L, g) and non-standard units (e.g. buckets, pieces, heaps) into kilograms in order to compare consumption of food items between households.  Non-standard unit (NSU) conversion factors = the mass (in kg) of one unit of each food item (e.g. a small bucket in Malawi = 2.5L, 2.5L of maize flour weighs 1.2kg). Each food item-unit combination requires a NSU conversion factor.
+
+The World Bank LSMS team provided NSU conversion factors for a number of different food items disaggregated by region (sizes of buckets in Malawi may vary depending on the region). We prioritized these World Bank NSU factors, where I tried to maintain the WB data as in-tact as possible (i.e. maintain regional factors and applying them according to the region the household was located) but it did require some cleaning (e.g. a bucket of pearl millet in the S weighs 0.002 kgs). 
+
+There were a lot of missing food-unit factors that the WB factors did not provide. This required either measuring the volume of these NSUs (which we purchased last time we were in Malawi) or educated guesses using the LSMS market photo guide and comparison to USDA mass data for each food item to determine the mass of each NSU for each food item. These estimated NSU factors were applied equally across all three regions. 
+
+Data on the NSU factors were compiled into a data file with each NSU factor labeled with a unique "measure_id" which is a combination of the food item code and the measurement unit id code. 
+
+Definitely not a glamorous part of the analysis and I assume this is the part that deters a lot of people from using HCES in the first place since it is tedious, time-consuming and very uninteresting.  
+
+
+> Create  data frame
+
+1. Label households by region
+  Food consumption data and geographic region data are located in different parts of the survey. Bring the two pieces of information together and merge.
+
+```{r}
+region <- hh_id %>% select(case_id, region)
+ihs4 <- merge(x=ihs4, y=region , by.x='id', by.y='case_id', fill=-9999, all.x = TRUE) %>% arrange(item_code) %>% arrange(HHID)
+```
+
+2. Merge food-unit specific NSU factor 
+  Merge in the NSU factors according by food item based on what NSU unit each household reported consuming that food item by. Maintain the variation in unit volumes/mass by region.
+
+```{r}
+ihs4 <- merge(x=ihs4, y=nsu.factors , by.x='measure_id', by.y='measure_id', fill=-9999, all.x = TRUE) %>% arrange(item_code) %>% arrange(id)
+```
+
+3. Create a variable selecting the appropritate NSU factor based on the HH reported region
+
+```{r}
+ihs4$ihs4factor_n <- ifelse(ihs4$region == 1, ihs4$ihs4factor_n, NA)
+ihs4$ihs4factor_c <- ifelse(ihs4$region == 2, ihs4$ihs4factor_c, NA)
+ihs4$ihs4factor_s <- ifelse(ihs4$region == 3, ihs4$ihs4factor_s, NA)
+ihs4$factor <- rowSums(ihs4[,c("ihs4factor_n", "ihs4factor_c", "ihs4factor_s")], na.rm=TRUE)
+ihs4 <- ihs4 %>% select(-ihs4factor_n, -ihs4factor_c, -ihs4factor_s)
+```
+
+4. Calculate the quantity of each food item consumed in Kg
+  (Quantity of the food item consumed in the NSU) X (NSU factor)
+```{r}
+ihs4$cons_kg <- ihs4$cons_quant * ihs4$factor
+```
+
+5. Convert to quantity consumed per day
+  IHS4 conducted a 7-day recall. To calculate total consumed per day, just divide by 7. 
+```{r}
+ihs4$kg_d <- ihs4$cons_kg/7
+```
+
+> DONE: archive
+
+```{r}
+write.csv(ihs4, "/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/hces/mwi/ihs2016/hh_mod_g_kg.csv")
+```
+
