@@ -10,7 +10,6 @@ output: html_document
 ```{r}
 
 library(epiDisplay)
-library(plyr)
 library(magrittr)
 library(foreign)
 library(psych)
