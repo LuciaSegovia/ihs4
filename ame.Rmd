@@ -16,17 +16,19 @@ library(psych)
 library(tidyverse)
 ```
 
->Data
+>Data 
 
 ```{r}
-ihs4.roster <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/model/mwi/data/ihs4/hh_mod_b.csv")
+ihs4.roster <- read.csv("/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_b.csv")
 
-ihs4_health <-read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/model/mwi/data/ihs4/hh_mod_d.csv")
+ihs4_health <-read.csv("/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_d.csv")
 
-ame <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/model/mwi/data/ame/ame_factors.csv")
+ame <- read.csv("/Users/kevintang/Documents/ihs4/data/ame/ame.factors.csv")
 
-ame.spec <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/model/mwi/data/ame/ame_spec.csv")
+ame.spec <- read.csv("/Users/kevintang/Documents/ihs4/data/ame/ame.spec.csv")
   ame.spec <- ame.spec %>% select(cat, ame.spec, afe.spec)
+  
+dhs15 <- read.dta("/Users/kevintang/Documents/ihs4/data/dhs/MWPR7AFL.DTA")
 ```
 
 
@@ -67,8 +69,6 @@ n=8238
 Mean womans weight: 55.9 kg
 Median womans weight: 54.1 kg
 ```{r}
-dhs15 <- read.dta("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/dhs/MW_2015-16_DHS_08202020_2026_145929/MWPR7ADT/MWPR7AFL.DTA")
-
 #Womens Weight in KG
 dhs15 %>% filter(ha2<2500) %>% ggplot(., aes(x=ha2)) + geom_histogram() + theme_bw()
 
@@ -170,5 +170,5 @@ hme <- merge(x=hme , y=hh.pc , by.x='HHID', by.y='HHID', fill=-9999, all.x = TRU
 > DONE: archive
 
 ```{r}
-write.csv(hme, "/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/model/mwi/data/ame/hme.final.csv")
+write.csv(hme, "/Users/kevintang/Documents/ihs4/data/ame/hme.final.csv")
 ```
