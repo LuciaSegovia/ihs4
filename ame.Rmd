@@ -1,0 +1,174 @@
+---
+title: "5_ihs4_amefactors"
+author: "Kevin Tang"
+date: "8/20/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+> Packages
+
+```{r}
+library(epiDisplay)
+library(foreign)
+library(psych)
+library(tidyverse)
+```
+
+>Data
+
+```{r}
+ihs4.roster <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/model/mwi/data/ihs4/hh_mod_b.csv")
+
+ihs4_health <-read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/model/mwi/data/ihs4/hh_mod_d.csv")
+
+ame <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/model/mwi/data/ame/ame_factors.csv")
+
+ame.spec <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/model/mwi/data/ame/ame_spec.csv")
+  ame.spec <- ame.spec %>% select(cat, ame.spec, afe.spec)
+```
+
+
+> HH roster data
+
+```{r}
+ihs4.roster$case_id <- as.character(ihs4.roster$case_id)
+
+#Sex
+names(ihs4.roster)[names(ihs4.roster) == 'hh_b03'] <- 'sex'
+
+#Age
+names(ihs4.roster)[names(ihs4.roster) == 'hh_b05a'] <- 'age_y'
+names(ihs4.roster)[names(ihs4.roster) == 'hh_b05b'] <- 'age_m'
+ihs4.roster.c <- ihs4.roster %>% select(case_id, HHID, sex, age_y, age_m)
+
+ihs4.roster.c$age_y <- as.numeric(ihs4.roster.c$age_y)
+ihs4.roster.c$age_m <- as.numeric(ihs4.roster.c$age_m)
+ihs4.roster.c <- ihs4.roster.c %>% mutate(age.m.total = (age_y*12 + age_m))
+ihs4.roster.c <- ihs4.roster.c %>% mutate(age.u2 = case_when(age_y < 2 ~ "TRUE"))
+#Per capita variable
+ihs4.roster.c <- ihs4.roster.c %>% mutate(pc = 1)
+```
+
+> Per capita variable
+
+```{r}
+hh.pc <- aggregate(ihs4.roster.c$pc, by=list(HHID=ihs4.roster.c$HHID), FUN=sum)
+
+names(hh.pc)[names(hh.pc) == 'sum.ihs4.roster.c$pc'] <- 'pc'
+```
+
+
+>Demographic assumptions
+
+DHS Data for womens weight
+n=8238
+Mean womans weight: 55.9 kg
+Median womans weight: 54.1 kg
+```{r}
+dhs15 <- read.dta("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/dhs/MW_2015-16_DHS_08202020_2026_145929/MWPR7ADT/MWPR7AFL.DTA")
+
+#Womens Weight in KG
+dhs15 %>% filter(ha2<2500) %>% ggplot(., aes(x=ha2)) + geom_histogram() + theme_bw()
+
+dhs15.c <- dhs15 %>% filter(ha2<2500) 
+mean(dhs15.c$ha2, na.rm=TRUE)
+median(dhs15.c$ha2, na.rm=TRUE)
+
+dhs15.c %>% filter(!is.na(ha2))
+```
+
+>Merge HH demographic data with AME/AFE factors
+
+Men's weight: 65kg (assumption)
+Women's weight: 55kg (from DHS)
+PAL: 1.6X the BMR
+```{r}
+ihs4.roster.c$age_y <- as.factor(ihs4.roster.c$age_y)
+ame$age <- as.factor(ame$age)
+
+ihs4.roster.c <- merge(x=ihs4.roster.c , y=ame , by.x='age_y', by.y='age', fill=-9999, all.x = TRUE) %>% arrange(case_id) %>% select(case_id, HHID, sex, age_y, age_m, age.m.total, age.u2, ame.m, ame.f, afe.m, afe.f)
+
+ihs4.roster.c <- ihs4.roster.c  %>%
+  mutate(ame.base = ifelse(sex == 1, ame.m,
+               ifelse(sex == 2, ame.f, NA)))
+
+ihs4.roster.c <- ihs4.roster.c  %>%
+  mutate(afe.base = ifelse(sex == 1, afe.m,
+               ifelse(sex == 2, afe.f, NA)))
+```
+
+> Dietary energy requirements for children under 1 
+
+```{r}
+#create variable for under 1 year old categories
+ihs4.roster.c <- ihs4.roster.c %>% mutate(age.u1.cat = case_when(age.m.total  < 6 ~ "0-5 months",
+                                          age.m.total  >= 6 & age.m.total  < 9 ~ "6-8 months",
+                                          age.m.total  >= 9 & age.m.total  < 12 ~ "9-11 months"))
+
+ihs4.roster.c <- merge(x=ihs4.roster.c , y=ame.spec , by.x='age.u1.cat', by.y='cat', fill=-9999, all.x = TRUE) %>% arrange(case_id)
+```
+
+> Extra energy required for lactation
+
+```{r}
+ihs4.roster.c <- ihs4.roster.c %>% mutate(ame.lac = case_when(age.u2 =="TRUE" ~ 0.19))
+ihs4.roster.c <- ihs4.roster.c %>% mutate(afe.lac = case_when(age.u2 =="TRUE" ~ 0.24))
+```
+
+> Clean and aggregate AME/AFE values
+
+```{r}
+ihs4.roster.c$ame.spec[is.na(ihs4.roster.c$ame.spec)] <- 0
+ihs4.roster.c$afe.spec[is.na(ihs4.roster.c$afe.spec)] <- 0
+ihs4.roster.c$ame.lac[is.na(ihs4.roster.c$ame.lac)] <- 0
+ihs4.roster.c$afe.lac[is.na(ihs4.roster.c$afe.lac)] <- 0
+
+ihs4.roster.c <- ihs4.roster.c %>% mutate(ame = ame.base + ame.spec + ame.lac)
+ihs4.roster.c <- ihs4.roster.c %>% mutate(afe = afe.base + afe.spec + afe.lac)
+
+hh.ame <- aggregate(ihs4.roster.c$ame, by=list(HHID=ihs4.roster.c$HHID), FUN=sum)
+hh.afe <- aggregate(ihs4.roster.c$afe, by=list(HHID=ihs4.roster.c$HHID), FUN=sum)
+names(hh.ame)[names(hh.ame) == 'sum.ihs4.roster.c$ame'] <- 'ame.x'
+names(hh.afe)[names(hh.afe) == 'sum.ihs4.roster.c$afe'] <- 'afe.x'
+hme <- merge(x=hh.ame , y=hh.afe  , by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+```
+
+
+>Extra energy requirements for pregnancy
+
+```{r}
+ihs4_health$case_id <- as.character(ihs4_health$case_id)
+
+#Illness
+names(ihs4_health)[names(ihs4_health) == 'hh_d05a'] <- 'ill1'
+names(ihs4_health)[names(ihs4_health) == 'hh_d05b'] <- 'ill2'
+ihs4_health.c <- ihs4_health %>% select(case_id, HHID, ill1, ill2, hh_d05_oth)
+ihs4.preg <- ihs4_health.c %>% filter(ill1==28 | ill2==28)
+
+ihs4.preg$ame.preg <- 0.11
+ihs4.preg$afe.preg <- 0.14
+ihs4.preg <- ihs4.preg %>% select(HHID, ame.preg, afe.preg)
+
+hme <- merge(x=hme , y=ihs4.preg , by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE) 
+hme$ame.preg[is.na(hme$ame.preg)] <- 0
+hme$afe.preg[is.na(hme$afe.preg)] <- 0
+
+hme$ame <- hme$ame.x + hme$ame.preg
+hme$afe <- hme$afe.x + hme$afe.preg
+
+```
+
+>Finalization
+
+```{r}
+hme <- hme %>% select(HHID, ame, afe)
+hme <- merge(x=hme , y=hh.pc , by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+```
+
+> DONE: archive
+
+```{r}
+write.csv(hme, "/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/model/mwi/data/ame/hme.final.csv")
+```
