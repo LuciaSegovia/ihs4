@@ -21,7 +21,7 @@ ihs4 <- read.csv("/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_g_processed.c
 
 nep <- read.csv("/Users/kevintang/Documents/ihs4/data/nutrient.supply/nep.factors.csv")
 
-foodgroup <- read.csv("/Users/kevintang/Documents/ihs4/data/nutrient.supply/mwi_foodgroup.csv")
+foodgroup <- read.csv("/Users/kevintang/Documents/ihs4/data/nutrient.supply/foodgroup.csv")
 
 fctmatch <- read.csv("/Users/kevintang/Documents/ihs4/data/fct.match/fct.match.v2.csv")
 ```
@@ -34,13 +34,13 @@ This step requires us to eliminate food weight that would have been recalled as 
 For these data, we conducted a similar matching process that done for food composition matching, except we used "non-edible food portions". These values are not available in MAFOODS, KENFCT, or LSOFCT so we opted for the values provided in the FAO West African FCTs. Missing values were filled in with assumptions and should be cross referenced to the USDA Food Composition Database. 
 
 ```{r}
-nep <- nep %>% select(code, waste)
-nep <- merge(x=fcode, y=nep , by.x='code', by.y='item_code', fill=-9999, all.x = TRUE)
+nep <- nep %>% select(item_code, nep)
+nep$nep <-as.numeric(nep$nep)
 
-ihs4 <- merge(x=ihs4, y=nep , by.x='item_code', by.y='code', fill=-9999, all.x = TRUE) %>% arrange(HHID)
+ihs4 <- merge(x=ihs4, y=nep , by.x='item_code', by.y='item_code', fill=-9999, all.x = TRUE) %>% arrange(HHID)
 
-ihs4$kg_d_w <- ihs4$kg_d * ihs4$nep
-ihs4$g100_d_w <-ihs4$kg_d_w*10
+ihs4$kg_d_nep <- ihs4$kg_d2 * ihs4$nep
+ihs4$g100_d_nep <-ihs4$kg_d_nep*10
 ```
 
 >Labeling food groups of food items
@@ -65,14 +65,14 @@ ihs4 <- merge(x=ihs4, y=foodgroup, by.x='item_code', by.y='code', fill=-9999, al
 >Combining food consumption quantity with food composition data 
 
 ```{r}
-ihs4 <- ihs4 %>% select(HHID, item_code, g100_d_w)
-fctmatch.c <- fctmatch %>% select(code, fooditem, energy.comp, va.comp, fol.comp, vb12.comp, fe.comp, ca.comp, zn.comp) %>% arrange(code)
+ihs4.f <- ihs4 %>% select(HHID, item_code, g100_d_nep)
+fctmatch.c <- fctmatch %>% select(-fooditem) %>% arrange(code.ihs)
 
-ihs4 <- merge(x=ihs4, y=fctmatch.c , by.x='item_code', by.y='code', fill=-9999, all.x = TRUE) %>% arrange(item_code) %>% arrange(HHID)
+ihs4.f <- merge(x=ihs4.f, y=fctmatch.c , by.x='item_code', by.y='code.ihs', fill=-9999, all.x = TRUE) %>% arrange(item_code) %>% arrange(HHID)
 ```
 
 > DONE: archive
 
 ```{r}
-write.csv(ihs4, "/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_g_processed.csv")
+write.csv(ihs4.f, "/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_g_final.csv")
 ```
