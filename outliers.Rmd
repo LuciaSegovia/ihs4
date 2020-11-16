@@ -1,0 +1,89 @@
+---
+title: "outliers"
+author: "Kevin Tang"
+date: "11/11/2020"
+output: html_document
+---
+
+> Packages
+
+```{r}
+
+library(epiDisplay)
+library(foreign)
+library(psych)
+library(tidyverse)
+
+options(digits=2)
+
+```
+
+>Data
+
+```{r}
+ihs4 <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/hces/mwi/ihs2016/hh_mod_g_kg.csv")
+
+hh.hme <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/model/mwi/data/ame/hme.final.csv")
+```
+
+>Manage outliers: eliminate by excess food item intake
+
+Some individual food items may be overestimated due to stockpiling or purchases in bulk. Generally not a problem for surveys which have shorter recall periods but it doesn't hurt to check to see if there any outlandish overestimates of particular food items. In this chunk, I divided the kgs of each food items consumed by the number of people per household and the total number of days in the recall to get the total kgs consumed per capita per day. I know per capita is not the best way to divide out consumption data, but I don't think it will make up that big of a difference for this exercise and I need to push on with this part of the analysis. 
+
+Consumption quantity generally tends to be non-normally distributed with a right skew, so to define a more approriate cut-off, we can just log-transform the distribution to normalize and then take +4SDs (n=907) and +5SD (n=473) from the mean to identify households with potential unreasonable consumption estimates. For this analysis, it becasue slightly more complicated since there were a number of consumption quantities <1, meaning the log transformed value would be negative making calculating the SD a bit more challenging. To overcome this, for each consumption value I just applied the fuction f(x) = log(x)+1 to ensure that SDs (or in this case SD+1) could be calculated for all food items. 
+
+After identifying the potential outliers, I scanned through the list to see what was the potential cause of the deviation from the mean and if the reason warrented exclusion/reassignment of the value. There seemed to be three general reasons for the increased reported consumption:
+  1. households actually consumped that much more of the food item;
+  2. households purchased items in bulk/stockpiled and recalled the entire quantity purchased rather than the entire quantity consumed;
+  3. misreport by eneumerator (e.g. cons_quant reported as "250" for  "250g tin" when in reality it should just be "1 250g tin").
+  
+In general, it is pretty difficult to differentiate between whether the increased cons_quant is due to reason 1 or reason 2 listed above. Some food items/associated quantities are more obvious (e.g. 1kg of salt per person per day) but most are a toss up. I think that this issue is well recognized in HCES data overall, so I think it is best to replace all these identified outlier values as we risk over-cleaning the data. Therefore, for this exercise I decided to clean out values using a hard-line rule and replaced all outliers with the median value of that consumed quantity for the food item. 
+
+
+```{r}
+ihs4 <- merge(x=ihs4, y=hh.hme, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4$kg_ame_d <- ihs4$kg_d/ihs4$ame
+```
+
+```{r}
+#Consumption (kg/ame/day) (114= spaghetti, 101= maize flour, 311=groundnuts, 408= tomatos)
+ihs4 %>% filter(item_code==114) %>% ggplot(., aes(x=kg_ame_d)) + 
+  geom_histogram() +
+  theme_bw()
+
+ihs4 <- ihs4 %>% mutate(log.kg_ame_d.plus1 =log(kg_ame_d+1))
+
+#Calculate medians and SDs
+ihs4 %>% group_by(item_code) %>% 
+  summarise(n=n(),
+            mean.logplus1=mean(log(kg_ame_d+1), na.rm = TRUE), 
+            median=median(kg_ame_d, na.rm = TRUE),
+            sd.logplus1=sd(log(kg_ame_d+1), na.rm = TRUE))
+  
+ihs4.summ.merg <- ihs4.summ %>% mutate(sd4 = sd.logplus1*4) %>% mutate(sd5 = sd.logplus1*5) %>% select(item_code, mean.logplus1, median, sd4, sd5)
+
+ihs4.summ.merg <- ihs4.summ.merg %>% mutate(cut4 = sd4 + mean.logplus1) %>% mutate(cut5 = sd5 + mean.logplus1) %>% select(item_code, median, cut4, cut5)
+
+ihs4 <- merge(x=ihs4, y=ihs4.summ.merg , by.x='item_code', by.y='item_code', fill=-9999, all.x = TRUE) %>% arrange(HHID)
+
+ihs4 <- ihs4 %>% mutate(ol4 = cut4-log.kg_ame_d.plus1)
+ihs4 <- ihs4 %>% mutate(outlier4 = ifelse(ol4<0, 1, NA)) 
+
+ihs4 <- ihs4 %>% mutate(ol5 = cut5-log.kg_ame_d.plus1)
+ihs4 <- ihs4 %>% mutate(outlier5 = ifelse(ol5<0, 1, NA)) 
+
+ihs4$outlier.id <- paste0(as.character(ihs4$HHID),"_", as.character(ihs4$item_code))
+
+outliers <- ihs4 %>% filter(outlier5==1) %>% select(HHID, outlier5, item_code, item, unit, cons_quant, cons_unitA, kg_d, ame, kg_ame_d, outlier.id, median, cut5) %>% arrange(item_code)
+
+outliers$sdkg5 <- 10^outliers$cut5-1
+outliers$kg_d_replace <-outliers$median * outliers$ame
+
+write.csv(outliers, "/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/hces/mwi/outliers/outliers_5sd.csv")
+
+outliers.c <- outliers %>% select(outlier.id, kg_d_replace)
+ihs4 <- merge(x=ihs4, y=outliers.c , by.x='outlier.id', by.y='outlier.id', fill=-9999, all.x = TRUE)
+
+ihs4 <- ihs4 %>% mutate(kg_d2=ifelse(!is.na(kg_d_replace),kg_d_replace, kg_d))
+write.csv(ihs4, "/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/hces/mwi/ihs2016/hh_mod_g_kg.csv")
+```
