@@ -17,17 +17,17 @@ library(tidyverse)
 >Data
 
 ```{r}
-ihs4 <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/model/mwi/data/ihs4/hh_mod_g_kg.csv")
+ihs4 <- read.csv("/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_g_processed.csv")
 
-nep <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/model/mwi/data/nutrient.supply/nep.factors.csv")
+nep <- read.csv("/Users/kevintang/Documents/ihs4/data/nutrient.supply/nep.factors.csv")
 
-foodgroup <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/model/mwi/data/nutrient.supply/mwi_foodgroup.csv")
+foodgroup <- read.csv("/Users/kevintang/Documents/ihs4/data/nutrient.supply/mwi_foodgroup.csv")
 
-fctmatch <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/model/mwi/data/fct.match/fct.match.v2.csv")
+fctmatch <- read.csv("/Users/kevintang/Documents/ihs4/data/fct.match/fct.match.v2.csv")
 ```
 
 
->Non-edible portions of food items (data = non-edible factors)
+>Non-edible portions of food items
 
 This step requires us to eliminate food weight that would have been recalled as part of the HCES questionnaire, but would not have actually been consumed due to processing or preparation. This includes parts of food like banana peels, skins of fruits and tubers that would have been peeled, bones of large fish that would have been discarded etc. 
 
@@ -74,5 +74,5 @@ ihs4 <- merge(x=ihs4, y=fctmatch.c , by.x='item_code', by.y='code', fill=-9999, 
 > DONE: archive
 
 ```{r}
-write.csv(ihs4, "/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/hces/mwi/ihs2016/hh_mod_g_kg.csv")
+write.csv(ihs4, "/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_g_processed.csv")
 ```

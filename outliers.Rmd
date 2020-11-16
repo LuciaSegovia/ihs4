@@ -21,9 +21,9 @@ options(digits=2)
 >Data
 
 ```{r}
-ihs4 <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/hces/mwi/ihs2016/hh_mod_g_kg.csv")
+ihs4 <- read.csv("/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_g_processed.csv")
 
-hh.hme <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/model/mwi/data/ame/hme.final.csv")
+hh.hme <- read.csv("/Users/kevintang/Documents/ihs4/data/ame/hme.final.csv")
 ```
 
 >Manage outliers: eliminate by excess food item intake
@@ -79,11 +79,11 @@ outliers <- ihs4 %>% filter(outlier5==1) %>% select(HHID, outlier5, item_code, i
 outliers$sdkg5 <- 10^outliers$cut5-1
 outliers$kg_d_replace <-outliers$median * outliers$ame
 
-write.csv(outliers, "/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/hces/mwi/outliers/outliers_5sd.csv")
+write.csv(outliers, "/Users/kevintang/Documents/ihs4/data/nutrient.supply/outliers.5sd.csv")
 
 outliers.c <- outliers %>% select(outlier.id, kg_d_replace)
 ihs4 <- merge(x=ihs4, y=outliers.c , by.x='outlier.id', by.y='outlier.id', fill=-9999, all.x = TRUE)
 
 ihs4 <- ihs4 %>% mutate(kg_d2=ifelse(!is.na(kg_d_replace),kg_d_replace, kg_d))
-write.csv(ihs4, "/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/hces/mwi/ihs2016/hh_mod_g_kg.csv")
+write.csv(ihs4, "/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_g_processed.csv")
 ```

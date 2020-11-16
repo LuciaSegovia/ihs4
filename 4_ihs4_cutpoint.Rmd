@@ -3,10 +3,13 @@ title: "ihs4"
 author: "Kevin Tang"
 date: "6/23/2020"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r}
-
+library(viridis) #cool colors for figures using color gradients
+library(ggpubr) #multiple plot panels in same figure
 library(epiDisplay)
 library(plyr)
 library(magrittr)
@@ -16,6 +19,11 @@ library(readxl)
 library(tidyverse)
 
 sdg %>% mutate(log.gdp = log(gdp))
+```
+
+Load most updated data
+```{r}
+ihs4 <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/hces/mwi/ihs2016/hh_mod_g_kg.csv")
 ```
 
 Convert Non-Standard Units to KGs (data = NSU factors, HH regions)
@@ -37,7 +45,7 @@ ihs4$factor_s <- ifelse(ihs4$region == 3, ihs4$factor_s, NA)
 ihs4$factor <- rowSums(ihs4[,c("factor_n", "factor_c", "factor_s")], na.rm=TRUE)
 ihs4 <- ihs4 %>% select(-factor_n, -factor_c, -factor_s)
 
-ihs4$cons_kg <-ihs4$factor*ihs4$cons_quant
+ihs4$cons_kg <-ihs4$cons_quant*ihs4$factor
 
 write.csv(ihs4, "/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/hces/mwi/ihs2016/hh_mod_g_kg.csv")
 
@@ -48,7 +56,7 @@ write.csv(ihs4, "/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/D
 
 Some individual food items may be overestimated due to stockpiling or purchases in bulk. Generally not a problem for surveys which have shorter recall periods but it doesn't hurt to check to see if there any outlandish overestimates of particular food items. In this chunk, I divided the kgs of each food items consumed by the number of people per household and the total number of days in the recall to get the total kgs consumed per capita per day. I know per capita is not the best way to divide out consumption data, but I don't think it will make up that big of a difference for this exercise and I need to push on with this part of the analysis. 
 
-Consumption quantity generally tends to be non-normally distributed with a right skew, so to define a more approriate cut-off, we can just log-transform the distribution to normalize and then take +2SDs from the mean to identify households with unreasonable consumption estimates.
+Consumption quantity generally tends to be non-normally distributed with a right skew, so to define a more approriate cut-off, we can just log-transform the distribution to normalize and then take +2SDs from the mean to identify households with unreasonable consumption estimates. The households which lie in the upper limit tail, we can cap their total consumption of the food item at whatever consumption quantity the +4/5SD from mean represents 
 ```{r}
 hh_roster <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/hces/mwi/ihs2016/hh_mod_b.csv")
 percapita <- hh_roster %>% count(HHID)
@@ -56,22 +64,40 @@ percapita <- hh_roster %>% count(HHID)
 ihs4 <- merge(x=ihs4, y=percapita, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
 ihs4$kg_pc_d <- ihs4$cons_kg/ihs4$pc/7
 
-#Consumption (kg/capita/day) (114= spaghetti, 101= maize flour, 311=groundnuts, 408= tomatos)
-ihs4 %>% filter(item_code==408) %>% ggplot(., aes(x=kg_pc_d)) + 
-  geom_histogram() +
-  theme_bw()
+#Consumption (kg/capita/day) (114= spaghetti, 311=groundnuts, 408= tomatos, 101= maize flour,)
+ihs4 %>% filter(item_code==407) %>% ggplot(., aes(x=kg_pc_d)) + 
+    geom_histogram(aes(y=..density..),
+                   colour="black", fill="white") +
+    theme_bw() +
+    geom_density(alpha=.2, fill="#FF6666")
+
+
+ihs4 %>% filter(item_code==101) %>% 
+    ggplot(aes(sample=kg_pc_d)) + 
+    stat_qq() +
+    stat_qq_line()
+
 
 #Consumption (log(kg/capita/day))
-ihs4 %>% filter(item_code==408) %>% ggplot(., aes(x=log(kg_pc_d))) + 
-  geom_histogram() +
-  theme_bw()
+ihs4$logkg <- log(ihs4$kg_pc_d)
 
+ihs4 %>% filter(item_code==311) %>% ggplot(., aes(x=logkg)) + 
+    geom_histogram(aes(y=..density..),
+                   colour="black", fill="white") +
+    theme_bw() +
+    geom_density(alpha=.2, fill="#FF6666")
+
+
+ihs4 %>% filter(item_code==408) %>% 
+    ggplot(aes(sample=logkg)) + 
+    stat_qq() +
+    stat_qq_line()
 
 ```
 
 >Non-edible portions of food items (data = non-edible factors)
 
-This step requires us to eliminate food weight that would have been recalled as part of the HCES questionnaire, but would not have actually been consumed due to processing or preparation. This includes parts of food like banana peels, skins of fruits and tubers that would have been peeled, bones of large fish that would have been discarded etc. There isn't any good data to estimate exactly how much weight is lost, so we have to apply an "analyst's best estimate" here. We can change these estimates if we find better data or if any new studies are conducted in the future looking specifically at this, but I honestly have no idea what funder would find this kind of work compelling enough to throw money at. We might just have to stick with the assumptions we have so far.
+This step requires us to eliminate food weight that would have been recalled as part of the HCES questionnaire, but would not have actually been consumed due to processing, preparation, or cooking. This includes parts of food like banana peels, skins of fruits and tubers that would have been peeled, bones of large fish that would have been discarded etc. There isn't any good data to estimate exactly how much weight is lost, so we have to apply an "analyst's best estimate" here. We can change these estimates if we find better data or if any new studies are conducted in the future looking specifically at this, but I honestly have no idea what funder would find this kind of work compelling enough to throw money at. We might just have to stick with the assumptions we have so far.
 ```{r}
 waste <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/hces/mwi/waste_factor.csv")
 
@@ -103,7 +129,8 @@ fcode_match <- merge(x=fcode, y=fctmatch , by.x='code', by.y='fcode', fill=-9999
 
 fcode_match <- merge(x=fcode_match, y=mwifctitems , by.x='mwi_fct_code', by.y='code', fill=-9999, all.x = TRUE) %>% arrange(code) %>% select(code, item, mwi_fct_code, item_eng, everything())
 
-
+d <- fcode_match %>% select(code, item, item_eng, yield.assumption)
+write.csv(d, "/Users/kevintang/Desktop/items_match.csv")
 ```
 
 Food composition of food items (data = food composition tables)
@@ -118,6 +145,7 @@ Manage outliers #2 (aggregate by total energy intake)
 
 Account for bioavailability
 ```{r}
+ihs4 %>% filter(!is.na(cons_unitA)) %>% select(cons_unit, cons_unitA)
 
 ```
 
@@ -132,7 +160,5 @@ ihs4_health %>% count(hh_d05b)
 ihs4_health %>% filter(hh_d05b==30) %>% count(case_id) %>% arrange(n)
 ihs4_health %>% count(hh_d05_oth)
 
-
-glimpse(ihs4)
 ```
 

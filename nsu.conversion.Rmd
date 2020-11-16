@@ -22,11 +22,11 @@ options(digits=2)
 >Data
 
 ```{r}
-ihs4 <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/hces/mwi/ihs2016/hh_mod_g_clean.csv")
+ihs4 <- read.csv("/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_g_clean.csv")
 
-nsu.factors <-read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/model/mwi/data/cleaning/nsu.factors.csv")
+nsu.factors <-read.csv("/Users/kevintang/Documents/ihs4/data/nutrient.supply/nsu.factors.csv")
 
-hh_id <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/hces/mwi/ihs2016/hh_mod_a_filt.csv")
+hh_id <- read.csv("/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_a_filt.csv")
 
 ```
 
@@ -88,6 +88,6 @@ ihs4$kg_d <- ihs4$cons_kg/7
 > DONE: archive
 
 ```{r}
-write.csv(ihs4, "/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/hces/mwi/ihs2016/hh_mod_g_kg.csv")
+write.csv(ihs4, "/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_g_processed.csv")
 ```
 
