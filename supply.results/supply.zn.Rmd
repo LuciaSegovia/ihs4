@@ -1,0 +1,111 @@
+---
+title: "supply.zn"
+author: "Kevin Tang"
+date: "11/17/2020"
+output: html_document
+---
+> Packages
+
+```{r}
+library(epiDisplay)
+library(foreign)
+library(psych)
+library(tidyverse)
+```
+
+>Data
+
+```{r}
+ihs4 <- read.csv("/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_g_final.csv")
+
+hh.hme <- read.csv("/Users/kevintang/Documents/ihs4/data/ame/hme.final.csv")
+
+```
+
+
+>Food group analysis dummy data frames
+
+```{r}
+#Disaggregation by food groups
+cergra <- ihs4 %>% filter(food.group=="Cereals/grains")
+tubers <- ihs4 %>% filter(food.group=="Roots/tubers/plantains")
+nuts <- ihs4 %>% filter(food.group=="Nuts/pulses")
+veg <- ihs4 %>% filter(food.group=="Vegetables")
+meat <- ihs4 %>% filter(food.group=="Meat/animal prod")
+fruit <- ihs4 %>% filter(food.group=="Fruit")
+dairy <- ihs4 %>% filter(food.group=="Dairy")
+fat <- ihs4 %>% filter(food.group=="Fats")
+misc <- ihs4 %>% filter(food.group=="Spices/misc")
+vendor <- ihs4 %>% filter(food.group=="Vendor food")
+drinks <- ihs4 %>% filter(food.group=="Beverages")
+```
+
+>Zinc Supply
+
+```{r}
+#MN supply/food item = multiply quantity of foods consumed with MN composition of food
+ihs4$zn.supply <- ihs4$g100_d_nep*ihs4$zn.mg
+#HH MN supply = Aggregate MN supply from all food items 
+d.zn <- aggregate(ihs4$zn.supply, by=list(HHID=ihs4$HHID), FUN=sum)
+#Merged DF with all dietary variables
+ihs4.zn <- merge(x=hh.hme, y=d.zn , by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.zn <- ihs4.zn %>% rename(zn.supply = 'sum.ihs4$zn.supply')
+
+#Food group analysis
+cergra$zn.supply <- cergra$g100_d_nep*cergra$zn.mg
+tubers$zn.supply <- tubers$g100_d_nep*tubers$zn.mg
+nuts$zn.supply <- nuts$g100_d_nep*nuts$zn.mg
+veg$zn.supply <- veg$g100_d_nep*veg$zn.mg
+meat$zn.supply <- meat$g100_d_nep*meat$zn.mg
+fruit$zn.supply <- fruit$g100_d_nep*fruit$zn.mg
+dairy$zn.supply <- dairy$g100_d_nep*dairy$zn.mg
+fat$zn.supply <- fat$g100_d_nep*fat$zn.mg
+misc$zn.supply <- misc$g100_d_nep*misc$zn.mg
+vendor$zn.supply <- vendor$g100_d_nep*vendor$zn.mg
+drinks$zn.supply <- drinks$g100_d_nep*drinks$zn.mg
+
+#Aggregate zn supply per food group
+cergra.zn <- aggregate(cergra$zn.supply, by=list(HHID=cergra$HHID), FUN=sum)
+tubers.zn <- aggregate(tubers$zn.supply, by=list(HHID=tubers$HHID), FUN=sum)
+nuts.zn <- aggregate(nuts$zn.supply, by=list(HHID=nuts$HHID), FUN=sum)
+veg.zn <- aggregate(veg$zn.supply, by=list(HHID=veg$HHID), FUN=sum)
+meat.zn <- aggregate(meat$zn.supply, by=list(HHID=meat$HHID), FUN=sum)
+fruit.zn <- aggregate(fruit$zn.supply, by=list(HHID=fruit$HHID), FUN=sum)
+dairy.zn <- aggregate(dairy$zn.supply, by=list(HHID=dairy$HHID), FUN=sum)
+fat.zn <- aggregate(fat$zn.supply, by=list(HHID=fat$HHID), FUN=sum)
+misc.zn <- aggregate(misc$zn.supply, by=list(HHID=misc$HHID), FUN=sum)
+vendor.zn <- aggregate(vendor$zn.supply, by=list(HHID=vendor$HHID), FUN=sum)
+drinks.zn <- aggregate(drinks$zn.supply, by=list(HHID=drinks$HHID), FUN=sum)
+
+#Merged DF with all dietary variables
+ihs4.zn <- merge(x=ihs4.zn, y=cergra.zn, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.zn <- merge(x=ihs4.zn, y=tubers.zn, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.zn <- merge(x=ihs4.zn, y=nuts.zn, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.zn <- merge(x=ihs4.zn, y=veg.zn, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.zn <- merge(x=ihs4.zn, y=meat.zn, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.zn <- merge(x=ihs4.zn, y=fruit.zn, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.zn <- merge(x=ihs4.zn, y=dairy.zn, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.zn <- merge(x=ihs4.zn, y=fat.zn, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.zn <- merge(x=ihs4.zn, y=misc.zn, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.zn <- merge(x=ihs4.zn, y=vendor.zn, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.zn <- merge(x=ihs4.zn, y=drinks.zn, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+#Rename aggregated food group variables
+ihs4.zn <- ihs4.zn %>% rename(zn.cergra = 'sum.cergra$zn.supply',
+                                      zn.tubers = 'sum.tubers$zn.supply',
+                                      zn.nuts = 'sum.nuts$zn.supply',
+                                      zn.veg = 'sum.veg$zn.supply',
+                                      zn.meat = 'sum.meat$zn.supply',
+                                      zn.fruit = 'sum.fruit$zn.supply',
+                                      zn.dairy = 'sum.dairy$zn.supply',
+                                      zn.fat = 'sum.fat$zn.supply',
+                                      zn.misc = 'sum.misc$zn.supply',
+                                      zn.vendor = 'sum.vendor$zn.supply',
+                                      zn.bev = 'sum.drinks$zn.supply')
+
+```
+
+> DONE: archive
+
+```{r}
+write.csv(ihs4.zn, "/Users/kevintang/Documents/ihs4/data/results/zn.csv")
+```

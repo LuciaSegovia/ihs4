@@ -1,0 +1,112 @@
+---
+title: "supply.fol"
+author: "Kevin Tang"
+date: "11/17/2020"
+output: html_document
+---
+
+> Packages
+
+```{r}
+library(epiDisplay)
+library(foreign)
+library(psych)
+library(tidyverse)
+```
+
+>Data
+
+```{r}
+ihs4 <- read.csv("/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_g_final.csv")
+
+hh.hme <- read.csv("/Users/kevintang/Documents/ihs4/data/ame/hme.final.csv")
+
+```
+
+
+>Food group analysis dummy data frames
+
+```{r}
+#Disaggregation by food groups
+cergra <- ihs4 %>% filter(food.group=="Cereals/grains")
+tubers <- ihs4 %>% filter(food.group=="Roots/tubers/plantains")
+nuts <- ihs4 %>% filter(food.group=="Nuts/pulses")
+veg <- ihs4 %>% filter(food.group=="Vegetables")
+meat <- ihs4 %>% filter(food.group=="Meat/animal prod")
+fruit <- ihs4 %>% filter(food.group=="Fruit")
+dairy <- ihs4 %>% filter(food.group=="Dairy")
+fat <- ihs4 %>% filter(food.group=="Fats")
+misc <- ihs4 %>% filter(food.group=="Spices/misc")
+vendor <- ihs4 %>% filter(food.group=="Vendor food")
+drinks <- ihs4 %>% filter(food.group=="Beverages")
+```
+
+>Folate Supply
+
+```{r}
+#MN supply/food item = multiply quantity of foods consumed with MN composition of food
+ihs4$fol.supply <- ihs4$g100_d_nep*ihs4$folate.mcg
+#HH MN supply = Aggregate MN supply from all food items 
+d.fol <- aggregate(ihs4$fol.supply, by=list(HHID=ihs4$HHID), FUN=sum)
+#Merged DF with all dietary variables
+ihs4.fol <- merge(x=hh.hme, y=d.fol , by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.fol <- ihs4.fol %>% rename(fol.supply = 'sum.ihs4$fol.supply')
+
+#Food group analysis
+cergra$fol.supply <- cergra$g100_d_nep*cergra$folate.mcg
+tubers$fol.supply <- tubers$g100_d_nep*tubers$folate.mcg
+nuts$fol.supply <- nuts$g100_d_nep*nuts$folate.mcg
+veg$fol.supply <- veg$g100_d_nep*veg$folate.mcg
+meat$fol.supply <- meat$g100_d_nep*meat$folate.mcg
+fruit$fol.supply <- fruit$g100_d_nep*fruit$folate.mcg
+dairy$fol.supply <- dairy$g100_d_nep*dairy$folate.mcg
+fat$fol.supply <- fat$g100_d_nep*fat$folate.mcg
+misc$fol.supply <- misc$g100_d_nep*misc$folate.mcg
+vendor$fol.supply <- vendor$g100_d_nep*vendor$folate.mcg
+drinks$fol.supply <- drinks$g100_d_nep*drinks$folate.mcg
+
+#Aggregate fol supply per food group
+cergra.fol <- aggregate(cergra$fol.supply, by=list(HHID=cergra$HHID), FUN=sum)
+tubers.fol <- aggregate(tubers$fol.supply, by=list(HHID=tubers$HHID), FUN=sum)
+nuts.fol <- aggregate(nuts$fol.supply, by=list(HHID=nuts$HHID), FUN=sum)
+veg.fol <- aggregate(veg$fol.supply, by=list(HHID=veg$HHID), FUN=sum)
+meat.fol <- aggregate(meat$fol.supply, by=list(HHID=meat$HHID), FUN=sum)
+fruit.fol <- aggregate(fruit$fol.supply, by=list(HHID=fruit$HHID), FUN=sum)
+dairy.fol <- aggregate(dairy$fol.supply, by=list(HHID=dairy$HHID), FUN=sum)
+fat.fol <- aggregate(fat$fol.supply, by=list(HHID=fat$HHID), FUN=sum)
+misc.fol <- aggregate(misc$fol.supply, by=list(HHID=misc$HHID), FUN=sum)
+vendor.fol <- aggregate(vendor$fol.supply, by=list(HHID=vendor$HHID), FUN=sum)
+drinks.fol <- aggregate(drinks$fol.supply, by=list(HHID=drinks$HHID), FUN=sum)
+
+#Merged DF with all dietary variables
+ihs4.fol <- merge(x=ihs4.fol, y=cergra.fol, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.fol <- merge(x=ihs4.fol, y=tubers.fol, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.fol <- merge(x=ihs4.fol, y=nuts.fol, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.fol <- merge(x=ihs4.fol, y=veg.fol, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.fol <- merge(x=ihs4.fol, y=meat.fol, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.fol <- merge(x=ihs4.fol, y=fruit.fol, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.fol <- merge(x=ihs4.fol, y=dairy.fol, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.fol <- merge(x=ihs4.fol, y=fat.fol, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.fol <- merge(x=ihs4.fol, y=misc.fol, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.fol <- merge(x=ihs4.fol, y=vendor.fol, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.fol <- merge(x=ihs4.fol, y=drinks.fol, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+#Rename aggregated food group folriables
+ihs4.fol <- ihs4.fol %>% rename(fol.cergra = 'sum.cergra$fol.supply',
+                                      fol.tubers = 'sum.tubers$fol.supply',
+                                      fol.nuts = 'sum.nuts$fol.supply',
+                                      fol.veg = 'sum.veg$fol.supply',
+                                      fol.meat = 'sum.meat$fol.supply',
+                                      fol.fruit = 'sum.fruit$fol.supply',
+                                      fol.dairy = 'sum.dairy$fol.supply',
+                                      fol.fat = 'sum.fat$fol.supply',
+                                      fol.misc = 'sum.misc$fol.supply',
+                                      fol.vendor = 'sum.vendor$fol.supply',
+                                      fol.bev = 'sum.drinks$fol.supply')
+
+```
+
+> DONE: archive
+
+```{r}
+write.csv(ihs4.fol, "/Users/kevintang/Documents/ihs4/data/results/fol.csv")
+```

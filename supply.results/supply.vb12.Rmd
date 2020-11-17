@@ -1,0 +1,112 @@
+---
+title: "supply.vb12"
+author: "Kevin Tang"
+date: "11/17/2020"
+output: html_document
+---
+
+> Packages
+
+```{r}
+library(epiDisplay)
+library(foreign)
+library(psych)
+library(tidyverse)
+```
+
+>Data
+
+```{r}
+ihs4 <- read.csv("/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_g_final.csv")
+
+hh.hme <- read.csv("/Users/kevintang/Documents/ihs4/data/ame/hme.final.csv")
+
+```
+
+
+>Food group analysis dummy data frames
+
+```{r}
+#Disaggregation by food groups
+cergra <- ihs4 %>% filter(food.group=="Cereals/grains")
+tubers <- ihs4 %>% filter(food.group=="Roots/tubers/plantains")
+nuts <- ihs4 %>% filter(food.group=="Nuts/pulses")
+veg <- ihs4 %>% filter(food.group=="Vegetables")
+meat <- ihs4 %>% filter(food.group=="Meat/animal prod")
+fruit <- ihs4 %>% filter(food.group=="Fruit")
+dairy <- ihs4 %>% filter(food.group=="Dairy")
+fat <- ihs4 %>% filter(food.group=="Fats")
+misc <- ihs4 %>% filter(food.group=="Spices/misc")
+vendor <- ihs4 %>% filter(food.group=="Vendor food")
+drinks <- ihs4 %>% filter(food.group=="Beverages")
+```
+
+>Micronutrient Supply
+
+```{r}
+#MN supply/food item = multiply quantity of foods consumed with MN composition of food
+ihs4$vb12.supply <- ihs4$g100_d_nep*ihs4$vitb12.mcg
+#HH MN supply = Aggregate MN supply from all food items 
+d.vb12 <- aggregate(ihs4$vb12.supply, by=list(HHID=ihs4$HHID), FUN=sum)
+#Merged DF with all dietary variables
+ihs4.vb12 <- merge(x=hh.hme, y=d.vb12 , by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.vb12 <- ihs4.vb12 %>% rename(vb12.supply = 'sum.ihs4$vb12.supply')
+
+#Food group analysis
+cergra$vb12.supply <- cergra$g100_d_nep*cergra$vitb12.mcg
+tubers$vb12.supply <- tubers$g100_d_nep*tubers$vitb12.mcg
+nuts$vb12.supply <- nuts$g100_d_nep*nuts$vitb12.mcg
+veg$vb12.supply <- veg$g100_d_nep*veg$vitb12.mcg
+meat$vb12.supply <- meat$g100_d_nep*meat$vitb12.mcg
+fruit$vb12.supply <- fruit$g100_d_nep*fruit$vitb12.mcg
+dairy$vb12.supply <- dairy$g100_d_nep*dairy$vitb12.mcg
+fat$vb12.supply <- fat$g100_d_nep*fat$vitb12.mcg
+misc$vb12.supply <- misc$g100_d_nep*misc$vitb12.mcg
+vendor$vb12.supply <- vendor$g100_d_nep*vendor$vitb12.mcg
+drinks$vb12.supply <- drinks$g100_d_nep*drinks$vitb12.mcg
+
+#Aggregate vb12 supply per food group
+cergra.vb12 <- aggregate(cergra$vb12.supply, by=list(HHID=cergra$HHID), FUN=sum)
+tubers.vb12 <- aggregate(tubers$vb12.supply, by=list(HHID=tubers$HHID), FUN=sum)
+nuts.vb12 <- aggregate(nuts$vb12.supply, by=list(HHID=nuts$HHID), FUN=sum)
+veg.vb12 <- aggregate(veg$vb12.supply, by=list(HHID=veg$HHID), FUN=sum)
+meat.vb12 <- aggregate(meat$vb12.supply, by=list(HHID=meat$HHID), FUN=sum)
+fruit.vb12 <- aggregate(fruit$vb12.supply, by=list(HHID=fruit$HHID), FUN=sum)
+dairy.vb12 <- aggregate(dairy$vb12.supply, by=list(HHID=dairy$HHID), FUN=sum)
+fat.vb12 <- aggregate(fat$vb12.supply, by=list(HHID=fat$HHID), FUN=sum)
+misc.vb12 <- aggregate(misc$vb12.supply, by=list(HHID=misc$HHID), FUN=sum)
+vendor.vb12 <- aggregate(vendor$vb12.supply, by=list(HHID=vendor$HHID), FUN=sum)
+drinks.vb12 <- aggregate(drinks$vb12.supply, by=list(HHID=drinks$HHID), FUN=sum)
+
+#Merged DF with all dietary variables
+ihs4.vb12 <- merge(x=ihs4.vb12, y=cergra.vb12, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.vb12 <- merge(x=ihs4.vb12, y=tubers.vb12, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.vb12 <- merge(x=ihs4.vb12, y=nuts.vb12, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.vb12 <- merge(x=ihs4.vb12, y=veg.vb12, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.vb12 <- merge(x=ihs4.vb12, y=meat.vb12, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.vb12 <- merge(x=ihs4.vb12, y=fruit.vb12, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.vb12 <- merge(x=ihs4.vb12, y=dairy.vb12, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.vb12 <- merge(x=ihs4.vb12, y=fat.vb12, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.vb12 <- merge(x=ihs4.vb12, y=misc.vb12, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.vb12 <- merge(x=ihs4.vb12, y=vendor.vb12, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.vb12 <- merge(x=ihs4.vb12, y=drinks.vb12, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+#Rename aggregated food group variables
+ihs4.vb12 <- ihs4.vb12 %>% rename(vb12.cergra = 'sum.cergra$vb12.supply',
+                                      vb12.tubers = 'sum.tubers$vb12.supply',
+                                      vb12.nuts = 'sum.nuts$vb12.supply',
+                                      vb12.veg = 'sum.veg$vb12.supply',
+                                      vb12.meat = 'sum.meat$vb12.supply',
+                                      vb12.fruit = 'sum.fruit$vb12.supply',
+                                      vb12.dairy = 'sum.dairy$vb12.supply',
+                                      vb12.fat = 'sum.fat$vb12.supply',
+                                      vb12.misc = 'sum.misc$vb12.supply',
+                                      vb12.vendor = 'sum.vendor$vb12.supply',
+                                      vb12.bev = 'sum.drinks$vb12.supply')
+
+```
+
+> DONE: archive
+
+```{r}
+write.csv(ihs4.vb12, "/Users/kevintang/Documents/ihs4/data/results/vb12.csv")
+```

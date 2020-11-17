@@ -1,0 +1,112 @@
+---
+title: "supply.mg"
+author: "Kevin Tang"
+date: "11/17/2020"
+output: html_document
+---
+
+> Packages
+
+```{r}
+library(epiDisplay)
+library(foreign)
+library(psych)
+library(tidyverse)
+```
+
+>Data
+
+```{r}
+ihs4 <- read.csv("/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_g_final.csv")
+
+hh.hme <- read.csv("/Users/kevintang/Documents/ihs4/data/ame/hme.final.csv")
+
+```
+
+
+>Food group analysis dummy data frames
+
+```{r}
+#Disaggregation by food groups
+cergra <- ihs4 %>% filter(food.group=="Cereals/grains")
+tubers <- ihs4 %>% filter(food.group=="Roots/tubers/plantains")
+nuts <- ihs4 %>% filter(food.group=="Nuts/pulses")
+veg <- ihs4 %>% filter(food.group=="Vegetables")
+meat <- ihs4 %>% filter(food.group=="Meat/animal prod")
+fruit <- ihs4 %>% filter(food.group=="Fruit")
+dairy <- ihs4 %>% filter(food.group=="Dairy")
+fat <- ihs4 %>% filter(food.group=="Fats")
+misc <- ihs4 %>% filter(food.group=="Spices/misc")
+vendor <- ihs4 %>% filter(food.group=="Vendor food")
+drinks <- ihs4 %>% filter(food.group=="Beverages")
+```
+
+>Micronutrient Supply
+
+```{r}
+#MN supply/food item = multiply quantity of foods consumed with MN composition of food
+ihs4$mg.supply <- ihs4$g100_d_nep*ihs4$mg.mg
+#HH MN supply = Aggregate MN supply from all food items 
+d.mg <- aggregate(ihs4$mg.supply, by=list(HHID=ihs4$HHID), FUN=sum)
+#Merged DF with all dietary variables
+ihs4.mg <- merge(x=hh.hme, y=d.mg , by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.mg <- ihs4.mg %>% rename(mg.supply = 'sum.ihs4$mg.supply')
+
+#Food group analysis
+cergra$mg.supply <- cergra$g100_d_nep*cergra$mg.mg
+tubers$mg.supply <- tubers$g100_d_nep*tubers$mg.mg
+nuts$mg.supply <- nuts$g100_d_nep*nuts$mg.mg
+veg$mg.supply <- veg$g100_d_nep*veg$mg.mg
+meat$mg.supply <- meat$g100_d_nep*meat$mg.mg
+fruit$mg.supply <- fruit$g100_d_nep*fruit$mg.mg
+dairy$mg.supply <- dairy$g100_d_nep*dairy$mg.mg
+fat$mg.supply <- fat$g100_d_nep*fat$mg.mg
+misc$mg.supply <- misc$g100_d_nep*misc$mg.mg
+vendor$mg.supply <- vendor$g100_d_nep*vendor$mg.mg
+drinks$mg.supply <- drinks$g100_d_nep*drinks$mg.mg
+
+#Aggregate mg supply per food group
+cergra.mg <- aggregate(cergra$mg.supply, by=list(HHID=cergra$HHID), FUN=sum)
+tubers.mg <- aggregate(tubers$mg.supply, by=list(HHID=tubers$HHID), FUN=sum)
+nuts.mg <- aggregate(nuts$mg.supply, by=list(HHID=nuts$HHID), FUN=sum)
+veg.mg <- aggregate(veg$mg.supply, by=list(HHID=veg$HHID), FUN=sum)
+meat.mg <- aggregate(meat$mg.supply, by=list(HHID=meat$HHID), FUN=sum)
+fruit.mg <- aggregate(fruit$mg.supply, by=list(HHID=fruit$HHID), FUN=sum)
+dairy.mg <- aggregate(dairy$mg.supply, by=list(HHID=dairy$HHID), FUN=sum)
+fat.mg <- aggregate(fat$mg.supply, by=list(HHID=fat$HHID), FUN=sum)
+misc.mg <- aggregate(misc$mg.supply, by=list(HHID=misc$HHID), FUN=sum)
+vendor.mg <- aggregate(vendor$mg.supply, by=list(HHID=vendor$HHID), FUN=sum)
+drinks.mg <- aggregate(drinks$mg.supply, by=list(HHID=drinks$HHID), FUN=sum)
+
+#Merged DF with all dietary variables
+ihs4.mg <- merge(x=ihs4.mg, y=cergra.mg, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.mg <- merge(x=ihs4.mg, y=tubers.mg, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.mg <- merge(x=ihs4.mg, y=nuts.mg, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.mg <- merge(x=ihs4.mg, y=veg.mg, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.mg <- merge(x=ihs4.mg, y=meat.mg, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.mg <- merge(x=ihs4.mg, y=fruit.mg, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.mg <- merge(x=ihs4.mg, y=dairy.mg, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.mg <- merge(x=ihs4.mg, y=fat.mg, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.mg <- merge(x=ihs4.mg, y=misc.mg, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.mg <- merge(x=ihs4.mg, y=vendor.mg, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.mg <- merge(x=ihs4.mg, y=drinks.mg, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+#Rename aggregated food group variables
+ihs4.mg <- ihs4.mg %>% rename(mg.cergra = 'sum.cergra$mg.supply',
+                                      mg.tubers = 'sum.tubers$mg.supply',
+                                      mg.nuts = 'sum.nuts$mg.supply',
+                                      mg.veg = 'sum.veg$mg.supply',
+                                      mg.meat = 'sum.meat$mg.supply',
+                                      mg.fruit = 'sum.fruit$mg.supply',
+                                      mg.dairy = 'sum.dairy$mg.supply',
+                                      mg.fat = 'sum.fat$mg.supply',
+                                      mg.misc = 'sum.misc$mg.supply',
+                                      mg.vendor = 'sum.vendor$mg.supply',
+                                      mg.bev = 'sum.drinks$mg.supply')
+
+```
+
+> DONE: archive
+
+```{r}
+write.csv(ihs4.mg, "/Users/kevintang/Documents/ihs4/data/results/mg.csv")
+```

@@ -1,0 +1,111 @@
+---
+title: "supply.ve"
+author: "Kevin Tang"
+date: "11/17/2020"
+output: html_document
+---
+> Packages
+
+```{r}
+library(epiDisplay)
+library(foreign)
+library(psych)
+library(tidyverse)
+```
+
+>Data
+
+```{r}
+ihs4 <- read.csv("/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_g_final.csv")
+
+hh.hme <- read.csv("/Users/kevintang/Documents/ihs4/data/ame/hme.final.csv")
+
+```
+
+
+>Food group analysis dummy data frames
+
+```{r}
+#Disaggregation by food groups
+cergra <- ihs4 %>% filter(food.group=="Cereals/grains")
+tubers <- ihs4 %>% filter(food.group=="Roots/tubers/plantains")
+nuts <- ihs4 %>% filter(food.group=="Nuts/pulses")
+veg <- ihs4 %>% filter(food.group=="Vegetables")
+meat <- ihs4 %>% filter(food.group=="Meat/animal prod")
+fruit <- ihs4 %>% filter(food.group=="Fruit")
+dairy <- ihs4 %>% filter(food.group=="Dairy")
+fat <- ihs4 %>% filter(food.group=="Fats")
+misc <- ihs4 %>% filter(food.group=="Spices/misc")
+vendor <- ihs4 %>% filter(food.group=="Vendor food")
+drinks <- ihs4 %>% filter(food.group=="Beverages")
+```
+
+>Micronutrient Supply
+
+```{r}
+#MN supply/food item = multiply quantity of foods consumed with MN composition of food
+ihs4$ve.supply <- ihs4$g100_d_nep*ihs4$vite.mg
+#HH MN supply = Aggregate MN supply from all food items 
+d.ve <- aggregate(ihs4$ve.supply, by=list(HHID=ihs4$HHID), FUN=sum)
+#Merged DF with all dietary variables
+ihs4.ve <- merge(x=hh.hme, y=d.ve , by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.ve <- ihs4.ve %>% rename(ve.supply = 'sum.ihs4$ve.supply')
+
+#Food group analysis
+cergra$ve.supply <- cergra$g100_d_nep*cergra$vite.mg
+tubers$ve.supply <- tubers$g100_d_nep*tubers$vite.mg
+nuts$ve.supply <- nuts$g100_d_nep*nuts$vite.mg
+veg$ve.supply <- veg$g100_d_nep*veg$vite.mg
+meat$ve.supply <- meat$g100_d_nep*meat$vite.mg
+fruit$ve.supply <- fruit$g100_d_nep*fruit$vite.mg
+dairy$ve.supply <- dairy$g100_d_nep*dairy$vite.mg
+fat$ve.supply <- fat$g100_d_nep*fat$vite.mg
+misc$ve.supply <- misc$g100_d_nep*misc$vite.mg
+vendor$ve.supply <- vendor$g100_d_nep*vendor$vite.mg
+drinks$ve.supply <- drinks$g100_d_nep*drinks$vite.mg
+
+#Aggregate ve supply per food group
+cergra.ve <- aggregate(cergra$ve.supply, by=list(HHID=cergra$HHID), FUN=sum)
+tubers.ve <- aggregate(tubers$ve.supply, by=list(HHID=tubers$HHID), FUN=sum)
+nuts.ve <- aggregate(nuts$ve.supply, by=list(HHID=nuts$HHID), FUN=sum)
+veg.ve <- aggregate(veg$ve.supply, by=list(HHID=veg$HHID), FUN=sum)
+meat.ve <- aggregate(meat$ve.supply, by=list(HHID=meat$HHID), FUN=sum)
+fruit.ve <- aggregate(fruit$ve.supply, by=list(HHID=fruit$HHID), FUN=sum)
+dairy.ve <- aggregate(dairy$ve.supply, by=list(HHID=dairy$HHID), FUN=sum)
+fat.ve <- aggregate(fat$ve.supply, by=list(HHID=fat$HHID), FUN=sum)
+misc.ve <- aggregate(misc$ve.supply, by=list(HHID=misc$HHID), FUN=sum)
+vendor.ve <- aggregate(vendor$ve.supply, by=list(HHID=vendor$HHID), FUN=sum)
+drinks.ve <- aggregate(drinks$ve.supply, by=list(HHID=drinks$HHID), FUN=sum)
+
+#Merged DF with all dietary variables
+ihs4.ve <- merge(x=ihs4.ve, y=cergra.ve, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.ve <- merge(x=ihs4.ve, y=tubers.ve, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.ve <- merge(x=ihs4.ve, y=nuts.ve, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.ve <- merge(x=ihs4.ve, y=veg.ve, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.ve <- merge(x=ihs4.ve, y=meat.ve, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.ve <- merge(x=ihs4.ve, y=fruit.ve, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.ve <- merge(x=ihs4.ve, y=dairy.ve, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.ve <- merge(x=ihs4.ve, y=fat.ve, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.ve <- merge(x=ihs4.ve, y=misc.ve, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.ve <- merge(x=ihs4.ve, y=vendor.ve, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.ve <- merge(x=ihs4.ve, y=drinks.ve, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+#Rename aggregated food group variables
+ihs4.ve <- ihs4.ve %>% rename(ve.cergra = 'sum.cergra$ve.supply',
+                                      ve.tubers = 'sum.tubers$ve.supply',
+                                      ve.nuts = 'sum.nuts$ve.supply',
+                                      ve.veg = 'sum.veg$ve.supply',
+                                      ve.meat = 'sum.meat$ve.supply',
+                                      ve.fruit = 'sum.fruit$ve.supply',
+                                      ve.dairy = 'sum.dairy$ve.supply',
+                                      ve.fat = 'sum.fat$ve.supply',
+                                      ve.misc = 'sum.misc$ve.supply',
+                                      ve.vendor = 'sum.vendor$ve.supply',
+                                      ve.bev = 'sum.drinks$ve.supply')
+
+```
+
+> DONE: archive
+
+```{r}
+write.csv(ihs4.ve, "/Users/kevintang/Documents/ihs4/data/results/ve.csv")
+```

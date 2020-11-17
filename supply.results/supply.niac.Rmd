@@ -1,0 +1,111 @@
+---
+title: "supply.niac"
+author: "Kevin Tang"
+date: "11/17/2020"
+output: html_document
+---
+> Packages
+
+```{r}
+library(epiDisplay)
+library(foreign)
+library(psych)
+library(tidyverse)
+```
+
+>Data
+
+```{r}
+ihs4 <- read.csv("/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_g_final.csv")
+
+hh.hme <- read.csv("/Users/kevintang/Documents/ihs4/data/ame/hme.final.csv")
+
+```
+
+
+>Food group analysis dummy data frames
+
+```{r}
+#Disaggregation by food groups
+cergra <- ihs4 %>% filter(food.group=="Cereals/grains")
+tubers <- ihs4 %>% filter(food.group=="Roots/tubers/plantains")
+nuts <- ihs4 %>% filter(food.group=="Nuts/pulses")
+veg <- ihs4 %>% filter(food.group=="Vegetables")
+meat <- ihs4 %>% filter(food.group=="Meat/animal prod")
+fruit <- ihs4 %>% filter(food.group=="Fruit")
+dairy <- ihs4 %>% filter(food.group=="Dairy")
+fat <- ihs4 %>% filter(food.group=="Fats")
+misc <- ihs4 %>% filter(food.group=="Spices/misc")
+vendor <- ihs4 %>% filter(food.group=="Vendor food")
+drinks <- ihs4 %>% filter(food.group=="Beverages")
+```
+
+>Vitamin B12 Supply
+
+```{r}
+#MN supply/food item = multiply quantity of foods consumed with MN composition of food
+ihs4$niac.supply <- ihs4$g100_d_nep*ihs4$niac.mg
+#HH MN supply = Aggregate MN supply from all food items 
+d.niac <- aggregate(ihs4$niac.supply, by=list(HHID=ihs4$HHID), FUN=sum)
+#Merged DF with all dietary variables
+ihs4.niac <- merge(x=hh.hme, y=d.niac , by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.niac <- ihs4.niac %>% rename(niac.supply = 'sum.ihs4$niac.supply')
+
+#Food group analysis
+cergra$niac.supply <- cergra$g100_d_nep*cergra$niac.mg
+tubers$niac.supply <- tubers$g100_d_nep*tubers$niac.mg
+nuts$niac.supply <- nuts$g100_d_nep*nuts$niac.mg
+veg$niac.supply <- veg$g100_d_nep*veg$niac.mg
+meat$niac.supply <- meat$g100_d_nep*meat$niac.mg
+fruit$niac.supply <- fruit$g100_d_nep*fruit$niac.mg
+dairy$niac.supply <- dairy$g100_d_nep*dairy$niac.mg
+fat$niac.supply <- fat$g100_d_nep*fat$niac.mg
+misc$niac.supply <- misc$g100_d_nep*misc$niac.mg
+vendor$niac.supply <- vendor$g100_d_nep*vendor$niac.mg
+drinks$niac.supply <- drinks$g100_d_nep*drinks$niac.mg
+
+#Aggregate niac supply per food group
+cergra.niac <- aggregate(cergra$niac.supply, by=list(HHID=cergra$HHID), FUN=sum)
+tubers.niac <- aggregate(tubers$niac.supply, by=list(HHID=tubers$HHID), FUN=sum)
+nuts.niac <- aggregate(nuts$niac.supply, by=list(HHID=nuts$HHID), FUN=sum)
+veg.niac <- aggregate(veg$niac.supply, by=list(HHID=veg$HHID), FUN=sum)
+meat.niac <- aggregate(meat$niac.supply, by=list(HHID=meat$HHID), FUN=sum)
+fruit.niac <- aggregate(fruit$niac.supply, by=list(HHID=fruit$HHID), FUN=sum)
+dairy.niac <- aggregate(dairy$niac.supply, by=list(HHID=dairy$HHID), FUN=sum)
+fat.niac <- aggregate(fat$niac.supply, by=list(HHID=fat$HHID), FUN=sum)
+misc.niac <- aggregate(misc$niac.supply, by=list(HHID=misc$HHID), FUN=sum)
+vendor.niac <- aggregate(vendor$niac.supply, by=list(HHID=vendor$HHID), FUN=sum)
+drinks.niac <- aggregate(drinks$niac.supply, by=list(HHID=drinks$HHID), FUN=sum)
+
+#Merged DF with all dietary variables
+ihs4.niac <- merge(x=ihs4.niac, y=cergra.niac, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.niac <- merge(x=ihs4.niac, y=tubers.niac, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.niac <- merge(x=ihs4.niac, y=nuts.niac, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.niac <- merge(x=ihs4.niac, y=veg.niac, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.niac <- merge(x=ihs4.niac, y=meat.niac, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.niac <- merge(x=ihs4.niac, y=fruit.niac, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.niac <- merge(x=ihs4.niac, y=dairy.niac, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.niac <- merge(x=ihs4.niac, y=fat.niac, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.niac <- merge(x=ihs4.niac, y=misc.niac, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.niac <- merge(x=ihs4.niac, y=vendor.niac, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.niac <- merge(x=ihs4.niac, y=drinks.niac, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+#Rename aggregated food group variables
+ihs4.niac <- ihs4.niac %>% rename(niac.cergra = 'sum.cergra$niac.supply',
+                                      niac.tubers = 'sum.tubers$niac.supply',
+                                      niac.nuts = 'sum.nuts$niac.supply',
+                                      niac.veg = 'sum.veg$niac.supply',
+                                      niac.meat = 'sum.meat$niac.supply',
+                                      niac.fruit = 'sum.fruit$niac.supply',
+                                      niac.dairy = 'sum.dairy$niac.supply',
+                                      niac.fat = 'sum.fat$niac.supply',
+                                      niac.misc = 'sum.misc$niac.supply',
+                                      niac.vendor = 'sum.vendor$niac.supply',
+                                      niac.bev = 'sum.drinks$niac.supply')
+
+```
+
+> DONE: archive
+
+```{r}
+write.csv(ihs4.niac, "/Users/kevintang/Documents/ihs4/data/results/niac.csv")
+```

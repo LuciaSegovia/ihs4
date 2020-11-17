@@ -1,0 +1,112 @@
+---
+title: "supply.fe"
+author: "Kevin Tang"
+date: "11/17/2020"
+output: html_document
+---
+
+> Packages
+
+```{r}
+library(epiDisplay)
+library(foreign)
+library(psych)
+library(tidyverse)
+```
+
+>Data
+
+```{r}
+ihs4 <- read.csv("/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_g_final.csv")
+
+hh.hme <- read.csv("/Users/kevintang/Documents/ihs4/data/ame/hme.final.csv")
+
+```
+
+
+>Food group analysis dummy data frames
+
+```{r}
+#Disaggregation by food groups
+cergra <- ihs4 %>% filter(food.group=="Cereals/grains")
+tubers <- ihs4 %>% filter(food.group=="Roots/tubers/plantains")
+nuts <- ihs4 %>% filter(food.group=="Nuts/pulses")
+veg <- ihs4 %>% filter(food.group=="Vegetables")
+meat <- ihs4 %>% filter(food.group=="Meat/animal prod")
+fruit <- ihs4 %>% filter(food.group=="Fruit")
+dairy <- ihs4 %>% filter(food.group=="Dairy")
+fat <- ihs4 %>% filter(food.group=="Fats")
+misc <- ihs4 %>% filter(food.group=="Spices/misc")
+vendor <- ihs4 %>% filter(food.group=="Vendor food")
+drinks <- ihs4 %>% filter(food.group=="Beverages")
+```
+
+>Vitamin B12 Supply
+
+```{r}
+#MN supply/food item = multiply quantity of foods consumed with MN composition of food
+ihs4$fe.supply <- ihs4$g100_d_nep*ihs4$fe.mg
+#HH MN supply = Aggregate MN supply from all food items 
+d.fe <- aggregate(ihs4$fe.supply, by=list(HHID=ihs4$HHID), FUN=sum)
+#Merged DF with all dietary variables
+ihs4.fe <- merge(x=hh.hme, y=d.fe , by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.fe <- ihs4.fe %>% rename(fe.supply = 'sum.ihs4$fe.supply')
+
+#Food group analysis
+cergra$fe.supply <- cergra$g100_d_nep*cergra$fe.mg
+tubers$fe.supply <- tubers$g100_d_nep*tubers$fe.mg
+nuts$fe.supply <- nuts$g100_d_nep*nuts$fe.mg
+veg$fe.supply <- veg$g100_d_nep*veg$fe.mg
+meat$fe.supply <- meat$g100_d_nep*meat$fe.mg
+fruit$fe.supply <- fruit$g100_d_nep*fruit$fe.mg
+dairy$fe.supply <- dairy$g100_d_nep*dairy$fe.mg
+fat$fe.supply <- fat$g100_d_nep*fat$fe.mg
+misc$fe.supply <- misc$g100_d_nep*misc$fe.mg
+vendor$fe.supply <- vendor$g100_d_nep*vendor$fe.mg
+drinks$fe.supply <- drinks$g100_d_nep*drinks$fe.mg
+
+#Aggregate fe supply per food group
+cergra.fe <- aggregate(cergra$fe.supply, by=list(HHID=cergra$HHID), FUN=sum)
+tubers.fe <- aggregate(tubers$fe.supply, by=list(HHID=tubers$HHID), FUN=sum)
+nuts.fe <- aggregate(nuts$fe.supply, by=list(HHID=nuts$HHID), FUN=sum)
+veg.fe <- aggregate(veg$fe.supply, by=list(HHID=veg$HHID), FUN=sum)
+meat.fe <- aggregate(meat$fe.supply, by=list(HHID=meat$HHID), FUN=sum)
+fruit.fe <- aggregate(fruit$fe.supply, by=list(HHID=fruit$HHID), FUN=sum)
+dairy.fe <- aggregate(dairy$fe.supply, by=list(HHID=dairy$HHID), FUN=sum)
+fat.fe <- aggregate(fat$fe.supply, by=list(HHID=fat$HHID), FUN=sum)
+misc.fe <- aggregate(misc$fe.supply, by=list(HHID=misc$HHID), FUN=sum)
+vendor.fe <- aggregate(vendor$fe.supply, by=list(HHID=vendor$HHID), FUN=sum)
+drinks.fe <- aggregate(drinks$fe.supply, by=list(HHID=drinks$HHID), FUN=sum)
+
+#Merged DF with all dietary variables
+ihs4.fe <- merge(x=ihs4.fe, y=cergra.fe, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.fe <- merge(x=ihs4.fe, y=tubers.fe, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.fe <- merge(x=ihs4.fe, y=nuts.fe, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.fe <- merge(x=ihs4.fe, y=veg.fe, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.fe <- merge(x=ihs4.fe, y=meat.fe, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.fe <- merge(x=ihs4.fe, y=fruit.fe, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.fe <- merge(x=ihs4.fe, y=dairy.fe, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.fe <- merge(x=ihs4.fe, y=fat.fe, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.fe <- merge(x=ihs4.fe, y=misc.fe, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.fe <- merge(x=ihs4.fe, y=vendor.fe, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.fe <- merge(x=ihs4.fe, y=drinks.fe, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+#Rename aggregated food group variables
+ihs4.fe <- ihs4.fe %>% rename(fe.cergra = 'sum.cergra$fe.supply',
+                                      fe.tubers = 'sum.tubers$fe.supply',
+                                      fe.nuts = 'sum.nuts$fe.supply',
+                                      fe.veg = 'sum.veg$fe.supply',
+                                      fe.meat = 'sum.meat$fe.supply',
+                                      fe.fruit = 'sum.fruit$fe.supply',
+                                      fe.dairy = 'sum.dairy$fe.supply',
+                                      fe.fat = 'sum.fat$fe.supply',
+                                      fe.misc = 'sum.misc$fe.supply',
+                                      fe.vendor = 'sum.vendor$fe.supply',
+                                      fe.bev = 'sum.drinks$fe.supply')
+
+```
+
+> DONE: archive
+
+```{r}
+write.csv(ihs4.fe, "/Users/kevintang/Documents/ihs4/data/results/fe.csv")
+```

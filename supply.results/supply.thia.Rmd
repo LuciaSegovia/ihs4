@@ -1,0 +1,112 @@
+---
+title: "supply.thia"
+author: "Kevin Tang"
+date: "11/17/2020"
+output: html_document
+---
+
+> Packages
+
+```{r}
+library(epiDisplay)
+library(foreign)
+library(psych)
+library(tidyverse)
+```
+
+>Data
+
+```{r}
+ihs4 <- read.csv("/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_g_final.csv")
+
+hh.hme <- read.csv("/Users/kevintang/Documents/ihs4/data/ame/hme.final.csv")
+
+```
+
+
+>Food group analysis dummy data frames
+
+```{r}
+#Disaggregation by food groups
+cergra <- ihs4 %>% filter(food.group=="Cereals/grains")
+tubers <- ihs4 %>% filter(food.group=="Roots/tubers/plantains")
+nuts <- ihs4 %>% filter(food.group=="Nuts/pulses")
+veg <- ihs4 %>% filter(food.group=="Vegetables")
+meat <- ihs4 %>% filter(food.group=="Meat/animal prod")
+fruit <- ihs4 %>% filter(food.group=="Fruit")
+dairy <- ihs4 %>% filter(food.group=="Dairy")
+fat <- ihs4 %>% filter(food.group=="Fats")
+misc <- ihs4 %>% filter(food.group=="Spices/misc")
+vendor <- ihs4 %>% filter(food.group=="Vendor food")
+drinks <- ihs4 %>% filter(food.group=="Beverages")
+```
+
+>Vitamin B12 Supply
+
+```{r}
+#MN supply/food item = multiply quantity of foods consumed with MN composition of food
+ihs4$thia.supply <- ihs4$g100_d_nep*ihs4$thia.mg
+#HH MN supply = Aggregate MN supply from all food items 
+d.thia <- aggregate(ihs4$thia.supply, by=list(HHID=ihs4$HHID), FUN=sum)
+#Merged DF with all dietary variables
+ihs4.thia <- merge(x=hh.hme, y=d.thia , by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.thia <- ihs4.thia %>% rename(thia.supply = 'sum.ihs4$thia.supply')
+
+#Food group analysis
+cergra$thia.supply <- cergra$g100_d_nep*cergra$thia.mg
+tubers$thia.supply <- tubers$g100_d_nep*tubers$thia.mg
+nuts$thia.supply <- nuts$g100_d_nep*nuts$thia.mg
+veg$thia.supply <- veg$g100_d_nep*veg$thia.mg
+meat$thia.supply <- meat$g100_d_nep*meat$thia.mg
+fruit$thia.supply <- fruit$g100_d_nep*fruit$thia.mg
+dairy$thia.supply <- dairy$g100_d_nep*dairy$thia.mg
+fat$thia.supply <- fat$g100_d_nep*fat$thia.mg
+misc$thia.supply <- misc$g100_d_nep*misc$thia.mg
+vendor$thia.supply <- vendor$g100_d_nep*vendor$thia.mg
+drinks$thia.supply <- drinks$g100_d_nep*drinks$thia.mg
+
+#Aggregate thia supply per food group
+cergra.thia <- aggregate(cergra$thia.supply, by=list(HHID=cergra$HHID), FUN=sum)
+tubers.thia <- aggregate(tubers$thia.supply, by=list(HHID=tubers$HHID), FUN=sum)
+nuts.thia <- aggregate(nuts$thia.supply, by=list(HHID=nuts$HHID), FUN=sum)
+veg.thia <- aggregate(veg$thia.supply, by=list(HHID=veg$HHID), FUN=sum)
+meat.thia <- aggregate(meat$thia.supply, by=list(HHID=meat$HHID), FUN=sum)
+fruit.thia <- aggregate(fruit$thia.supply, by=list(HHID=fruit$HHID), FUN=sum)
+dairy.thia <- aggregate(dairy$thia.supply, by=list(HHID=dairy$HHID), FUN=sum)
+fat.thia <- aggregate(fat$thia.supply, by=list(HHID=fat$HHID), FUN=sum)
+misc.thia <- aggregate(misc$thia.supply, by=list(HHID=misc$HHID), FUN=sum)
+vendor.thia <- aggregate(vendor$thia.supply, by=list(HHID=vendor$HHID), FUN=sum)
+drinks.thia <- aggregate(drinks$thia.supply, by=list(HHID=drinks$HHID), FUN=sum)
+
+#Merged DF with all dietary variables
+ihs4.thia <- merge(x=ihs4.thia, y=cergra.thia, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.thia <- merge(x=ihs4.thia, y=tubers.thia, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.thia <- merge(x=ihs4.thia, y=nuts.thia, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.thia <- merge(x=ihs4.thia, y=veg.thia, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.thia <- merge(x=ihs4.thia, y=meat.thia, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.thia <- merge(x=ihs4.thia, y=fruit.thia, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.thia <- merge(x=ihs4.thia, y=dairy.thia, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.thia <- merge(x=ihs4.thia, y=fat.thia, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.thia <- merge(x=ihs4.thia, y=misc.thia, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.thia <- merge(x=ihs4.thia, y=vendor.thia, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.thia <- merge(x=ihs4.thia, y=drinks.thia, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+#Rename aggregated food group variables
+ihs4.thia <- ihs4.thia %>% rename(thia.cergra = 'sum.cergra$thia.supply',
+                                      thia.tubers = 'sum.tubers$thia.supply',
+                                      thia.nuts = 'sum.nuts$thia.supply',
+                                      thia.veg = 'sum.veg$thia.supply',
+                                      thia.meat = 'sum.meat$thia.supply',
+                                      thia.fruit = 'sum.fruit$thia.supply',
+                                      thia.dairy = 'sum.dairy$thia.supply',
+                                      thia.fat = 'sum.fat$thia.supply',
+                                      thia.misc = 'sum.misc$thia.supply',
+                                      thia.vendor = 'sum.vendor$thia.supply',
+                                      thia.bev = 'sum.drinks$thia.supply')
+
+```
+
+> DONE: archive
+
+```{r}
+write.csv(ihs4.thia, "/Users/kevintang/Documents/ihs4/data/results/thia.csv")
+```

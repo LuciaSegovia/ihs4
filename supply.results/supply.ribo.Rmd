@@ -1,0 +1,112 @@
+---
+title: "supply.ribo"
+author: "Kevin Tang"
+date: "11/17/2020"
+output: html_document
+---
+
+> Packages
+
+```{r}
+library(epiDisplay)
+library(foreign)
+library(psych)
+library(tidyverse)
+```
+
+>Data
+
+```{r}
+ihs4 <- read.csv("/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_g_final.csv")
+
+hh.hme <- read.csv("/Users/kevintang/Documents/ihs4/data/ame/hme.final.csv")
+
+```
+
+
+>Food group analysis dummy data frames
+
+```{r}
+#Disaggregation by food groups
+cergra <- ihs4 %>% filter(food.group=="Cereals/grains")
+tubers <- ihs4 %>% filter(food.group=="Roots/tubers/plantains")
+nuts <- ihs4 %>% filter(food.group=="Nuts/pulses")
+veg <- ihs4 %>% filter(food.group=="Vegetables")
+meat <- ihs4 %>% filter(food.group=="Meat/animal prod")
+fruit <- ihs4 %>% filter(food.group=="Fruit")
+dairy <- ihs4 %>% filter(food.group=="Dairy")
+fat <- ihs4 %>% filter(food.group=="Fats")
+misc <- ihs4 %>% filter(food.group=="Spices/misc")
+vendor <- ihs4 %>% filter(food.group=="Vendor food")
+drinks <- ihs4 %>% filter(food.group=="Beverages")
+```
+
+>Vitamin B12 Supply
+
+```{r}
+#MN supply/food item = multiply quantity of foods consumed with MN composition of food
+ihs4$ribo.supply <- ihs4$g100_d_nep*ihs4$ribo.mg
+#HH MN supply = Aggregate MN supply from all food items 
+d.ribo <- aggregate(ihs4$ribo.supply, by=list(HHID=ihs4$HHID), FUN=sum)
+#Merged DF with all dietary variables
+ihs4.ribo <- merge(x=hh.hme, y=d.ribo , by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.ribo <- ihs4.ribo %>% rename(ribo.supply = 'sum.ihs4$ribo.supply')
+
+#Food group analysis
+cergra$ribo.supply <- cergra$g100_d_nep*cergra$ribo.mg
+tubers$ribo.supply <- tubers$g100_d_nep*tubers$ribo.mg
+nuts$ribo.supply <- nuts$g100_d_nep*nuts$ribo.mg
+veg$ribo.supply <- veg$g100_d_nep*veg$ribo.mg
+meat$ribo.supply <- meat$g100_d_nep*meat$ribo.mg
+fruit$ribo.supply <- fruit$g100_d_nep*fruit$ribo.mg
+dairy$ribo.supply <- dairy$g100_d_nep*dairy$ribo.mg
+fat$ribo.supply <- fat$g100_d_nep*fat$ribo.mg
+misc$ribo.supply <- misc$g100_d_nep*misc$ribo.mg
+vendor$ribo.supply <- vendor$g100_d_nep*vendor$ribo.mg
+drinks$ribo.supply <- drinks$g100_d_nep*drinks$ribo.mg
+
+#Aggregate ribo supply per food group
+cergra.ribo <- aggregate(cergra$ribo.supply, by=list(HHID=cergra$HHID), FUN=sum)
+tubers.ribo <- aggregate(tubers$ribo.supply, by=list(HHID=tubers$HHID), FUN=sum)
+nuts.ribo <- aggregate(nuts$ribo.supply, by=list(HHID=nuts$HHID), FUN=sum)
+veg.ribo <- aggregate(veg$ribo.supply, by=list(HHID=veg$HHID), FUN=sum)
+meat.ribo <- aggregate(meat$ribo.supply, by=list(HHID=meat$HHID), FUN=sum)
+fruit.ribo <- aggregate(fruit$ribo.supply, by=list(HHID=fruit$HHID), FUN=sum)
+dairy.ribo <- aggregate(dairy$ribo.supply, by=list(HHID=dairy$HHID), FUN=sum)
+fat.ribo <- aggregate(fat$ribo.supply, by=list(HHID=fat$HHID), FUN=sum)
+misc.ribo <- aggregate(misc$ribo.supply, by=list(HHID=misc$HHID), FUN=sum)
+vendor.ribo <- aggregate(vendor$ribo.supply, by=list(HHID=vendor$HHID), FUN=sum)
+drinks.ribo <- aggregate(drinks$ribo.supply, by=list(HHID=drinks$HHID), FUN=sum)
+
+#Merged DF with all dietary variables
+ihs4.ribo <- merge(x=ihs4.ribo, y=cergra.ribo, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.ribo <- merge(x=ihs4.ribo, y=tubers.ribo, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.ribo <- merge(x=ihs4.ribo, y=nuts.ribo, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.ribo <- merge(x=ihs4.ribo, y=veg.ribo, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.ribo <- merge(x=ihs4.ribo, y=meat.ribo, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.ribo <- merge(x=ihs4.ribo, y=fruit.ribo, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.ribo <- merge(x=ihs4.ribo, y=dairy.ribo, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.ribo <- merge(x=ihs4.ribo, y=fat.ribo, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.ribo <- merge(x=ihs4.ribo, y=misc.ribo, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.ribo <- merge(x=ihs4.ribo, y=vendor.ribo, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.ribo <- merge(x=ihs4.ribo, y=drinks.ribo, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+#Rename aggregated food group variables
+ihs4.ribo <- ihs4.ribo %>% rename(ribo.cergra = 'sum.cergra$ribo.supply',
+                                      ribo.tubers = 'sum.tubers$ribo.supply',
+                                      ribo.nuts = 'sum.nuts$ribo.supply',
+                                      ribo.veg = 'sum.veg$ribo.supply',
+                                      ribo.meat = 'sum.meat$ribo.supply',
+                                      ribo.fruit = 'sum.fruit$ribo.supply',
+                                      ribo.dairy = 'sum.dairy$ribo.supply',
+                                      ribo.fat = 'sum.fat$ribo.supply',
+                                      ribo.misc = 'sum.misc$ribo.supply',
+                                      ribo.vendor = 'sum.vendor$ribo.supply',
+                                      ribo.bev = 'sum.drinks$ribo.supply')
+
+```
+
+> DONE: archive
+
+```{r}
+write.csv(ihs4.ribo, "/Users/kevintang/Documents/ihs4/data/results/ribo.csv")
+```
