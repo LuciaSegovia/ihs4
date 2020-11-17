@@ -1,0 +1,113 @@
+---
+title: "supply.energy"
+author: "Kevin Tang"
+date: "11/16/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+> Packages
+
+```{r}
+library(epiDisplay)
+library(foreign)
+library(psych)
+library(tidyverse)
+```
+
+>Data
+
+```{r}
+ihs4 <- read.csv("/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_g_final.csv")
+
+hh.hme <- read.csv("/Users/kevintang/Documents/ihs4/data/ame/hme.final.csv")
+
+```
+
+
+>Food group analysis dummy data frames
+
+```{r}
+#Disaggregation by food groups
+cergra <- ihs4 %>% filter(food.group=="Cereals/grains")
+tubers <- ihs4 %>% filter(food.group=="Roots/tubers/plantains")
+nuts <- ihs4 %>% filter(food.group=="Nuts/pulses")
+veg <- ihs4 %>% filter(food.group=="Vegetables")
+meat <- ihs4 %>% filter(food.group=="Meat/animal prod")
+fruit <- ihs4 %>% filter(food.group=="Fruit")
+dairy <- ihs4 %>% filter(food.group=="Dairy")
+fat <- ihs4 %>% filter(food.group=="Fats")
+misc <- ihs4 %>% filter(food.group=="Spices/misc")
+vendor <- ihs4 %>% filter(food.group=="Vendor food")
+drinks <- ihs4 %>% filter(food.group=="Beverages")
+```
+
+ENERGY
+```{r}
+#MN supply/food item = multiply quantity of foods consumed with MN composition of food
+ihs4$energy.supply <- ihs4$g100_d_nep*ihs4$energy.kcal
+#HH MN supply = Aggregate MN supply from all food items 
+d.energy <- aggregate(ihs4$energy.supply, by=list(HHID=ihs4$HHID), FUN=sum)
+#Merged DF with all dietary variables
+ihs4.energy <- merge(x=hh.hme, y=d.energy , by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.energy <- ihs4.energy %>% rename(energy.supply = 'sum.ihs4$energy.supply')
+
+#Food group analysis
+cergra$energy.supply <- cergra$g100_d_nep*cergra$energy.kcal
+tubers$energy.supply <- tubers$g100_d_nep*tubers$energy.kcal
+nuts$energy.supply <- nuts$g100_d_nep*nuts$energy.kcal
+veg$energy.supply <- veg$g100_d_nep*veg$energy.kcal
+meat$energy.supply <- meat$g100_d_nep*meat$energy.kcal
+fruit$energy.supply <- fruit$g100_d_nep*fruit$energy.kcal
+dairy$energy.supply <- dairy$g100_d_nep*dairy$energy.kcal
+fat$energy.supply <- fat$g100_d_nep*fat$energy.kcal
+misc$energy.supply <- misc$g100_d_nep*misc$energy.kcal
+vendor$energy.supply <- vendor$g100_d_nep*vendor$energy.kcal
+drinks$energy.supply <- drinks$g100_d_nep*drinks$energy.kcal
+
+#Aggregate energy supply per food group
+cergra.energy <- aggregate(cergra$energy.supply, by=list(HHID=cergra$HHID), FUN=sum)
+tubers.energy <- aggregate(tubers$energy.supply, by=list(HHID=tubers$HHID), FUN=sum)
+nuts.energy <- aggregate(nuts$energy.supply, by=list(HHID=nuts$HHID), FUN=sum)
+veg.energy <- aggregate(veg$energy.supply, by=list(HHID=veg$HHID), FUN=sum)
+meat.energy <- aggregate(meat$energy.supply, by=list(HHID=meat$HHID), FUN=sum)
+fruit.energy <- aggregate(fruit$energy.supply, by=list(HHID=fruit$HHID), FUN=sum)
+dairy.energy <- aggregate(dairy$energy.supply, by=list(HHID=dairy$HHID), FUN=sum)
+fat.energy <- aggregate(fat$energy.supply, by=list(HHID=fat$HHID), FUN=sum)
+misc.energy <- aggregate(misc$energy.supply, by=list(HHID=misc$HHID), FUN=sum)
+vendor.energy <- aggregate(vendor$energy.supply, by=list(HHID=vendor$HHID), FUN=sum)
+drinks.energy <- aggregate(drinks$energy.supply, by=list(HHID=drinks$HHID), FUN=sum)
+
+#Merged DF with all dietary variables
+ihs4.energy <- merge(x=ihs4.energy, y=cergra.energy, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.energy <- merge(x=ihs4.energy, y=tubers.energy, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.energy <- merge(x=ihs4.energy, y=nuts.energy, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.energy <- merge(x=ihs4.energy, y=veg.energy, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.energy <- merge(x=ihs4.energy, y=meat.energy, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.energy <- merge(x=ihs4.energy, y=fruit.energy, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.energy <- merge(x=ihs4.energy, y=dairy.energy, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.energy <- merge(x=ihs4.energy, y=fat.energy, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.energy <- merge(x=ihs4.energy, y=misc.energy, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.energy <- merge(x=ihs4.energy, y=vendor.energy, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.energy <- merge(x=ihs4.energy, y=drinks.energy, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+#Rename aggregated food group variables
+ihs4.energy <- ihs4.energy %>% rename(energy.cergra = 'sum.cergra$energy.supply',
+                                      energy.tubers = 'sum.tubers$energy.supply',
+                                      energy.nuts = 'sum.nuts$energy.supply',
+                                      energy.veg = 'sum.veg$energy.supply',
+                                      energy.meat = 'sum.meat$energy.supply',
+                                      energy.fruit = 'sum.fruit$energy.supply',
+                                      energy.dairy = 'sum.dairy$energy.supply',
+                                      energy.fat = 'sum.fat$energy.supply',
+                                      energy.misc = 'sum.misc$energy.supply',
+                                      energy.vendor = 'sum.vendor$energy.supply',
+                                      energy.bev = 'sum.drinks$energy.supply')
+
+```
+
+> DONE: archive
+
+```{r}
+write.csv(ihs4.energy, "/Users/kevintang/Documents/ihs4/data/results/energy.csv")
+```
