@@ -5,6 +5,16 @@ date: "3/3/2020"
 output: html_document
 ---
 
+INTRO 
+
+1) We need to identify where the data on househould consumption is stored. 
+
+For ish4, the data on food consumption was recorded as part of the household questionnaire (datasets starting w/ HH_). Within this questionnaire, data on food consumption is recorded in the module G (Food consumption). Within the module G, we find 3 that set, each one with different level of aggregation. We are interested in g1 which is food recorded at food item level (disaggregated data). 
+
+Hence, we need to load the file hh_mod_g1 (household questionaire module G, 1- consumption at item level). Once it is loaded, we can check that the file is loaded correctly by checking that the observations (cases) and variables match the one reported in the worldbank website (https://microdata.worldbank.org/index.php/catalog/2936/data-dictionary).
+
+
+
 ```{r}
 #--- Load libraries - reminder to always load tidyverse last
 library(epiDisplay)
@@ -29,7 +39,16 @@ ucode <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs
 
 >CHANGE VARIABLE NAMES AND DATA CLASS
 
+The next step, it is to standardize the variables. This is important because we are going to be using data from different countries and the variable names will changes accross quesitonnaire. However, if we want to standardize (or harmonize) our cleaning and processing structure, it is best to standardize variables names (when possible). Within the data dictionary we can find a description of each variable. And, below is the codebook with the new variable names.
+
+Those variables with hh_g03 refer to total consumption, hh_g04 refers to purchased by the household, hh_06 refers to food from own-production, 
+hh_g07 refers to food consumed from gift (and other sources). 
+
+Then, to identify variables that report quantity will be those that has an 'a' after the number (i.e. hh_g03a), variables reporting units will be identified by 'b' (i.e. hh_g07b, or hhg07b_label, hg07b_oth) and 'c' is for sub-unit related to photo aid guidance. 
+
 Codebook (https://microdata.worldbank.org/index.php/catalog/2939/datafile/F192)
+
+**Variable names need to be corrected!!** gift and purchased have the same code
 
 id =            case_id              purc_quant =    hh_g04a              gift_quant =    hh_g04a
 consYN =        hh_g01               purc_unitA =    hh_g04b              gift_unitA =    hh_g04b
@@ -124,6 +143,10 @@ ihs4 <- ihs4 %>% select(id:consYN, item_code, item, item_oth:cons_unitA, cons_un
 
 
 >CLEANING UNITS LABELLED AS "OTHER"
+
+Food items and units are coming from a standard list. However, some food consumed by the household is not in that list of items, hence it can be recorded under 'other'. The code to identify 'other food items is
+
+Similarly, for units, when the household is reporting the food consumed in a unit that it is not in the list will be recoded and the unit code apply for 'other' is 23.
 
 There are a number of item units recorded as "23" but described as existing ucodes in our codebook.
 We need to change these units from "23" to their appropriate units as in this analysis any item without a standard unit will be excluded. 
