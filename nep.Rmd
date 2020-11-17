@@ -58,7 +58,7 @@ We need to add a variable to group items by the food group that a food item fell
 -Fats
 -Spices/misc
 -Vendor food
--Beverages
+-Beverages 
 
 ```{r}
 ihs4 <- merge(x=ihs4, y=foodgroup, by.x='item_code', by.y='code', fill=-9999, all.x = TRUE) %>% arrange(item_code) %>% arrange(HHID)
