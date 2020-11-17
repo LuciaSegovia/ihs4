@@ -3,6 +3,8 @@ title: "nonedible.portions.fctmatch"
 author: "Kevin Tang"
 date: "11/12/2020"
 output: html_document
+editor_options: 
+  chunk_output_type: inline
 ---
 
 > Packages
@@ -65,7 +67,7 @@ ihs4 <- merge(x=ihs4, y=foodgroup, by.x='item_code', by.y='code', fill=-9999, al
 >Combining food consumption quantity with food composition data 
 
 ```{r}
-ihs4.f <- ihs4 %>% select(HHID, item_code, g100_d_nep)
+ihs4.f <- ihs4 %>% select(HHID, item_code, g100_d_nep, food.group)
 fctmatch.c <- fctmatch %>% select(-fooditem) %>% arrange(code.ihs)
 
 ihs4.f <- merge(x=ihs4.f, y=fctmatch.c , by.x='item_code', by.y='code.ihs', fill=-9999, all.x = TRUE) %>% arrange(item_code) %>% arrange(HHID)
