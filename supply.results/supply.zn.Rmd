@@ -104,6 +104,42 @@ ihs4.zn <- ihs4.zn %>% rename(zn.cergra = 'sum.cergra$zn.supply',
 
 ```
 
+>THREE METRICS TO MEASURE BROKEN UP INTO TWO CATEGORIES:
+
+**CATEGORY 1: APPARENT INTAKE**
+
+#1. Supply per AME
+
+```{r}
+#MN supply/AME
+ihs4.zn$ai.ame <- ihs4.zn$zn.supply/ihs4.zn$ame
+#AME inadequacy
+ihs4.zn <- ihs4.zn %>% mutate(ame.inad = ifelse(ai.ame<12.7, "Inadequate", "Adequate"))
+```
+
+#2. Supply per AFE
+
+```{r}
+#MN supply/AFE
+ihs4.zn$ai.afe <- ihs4.zn$zn.supply/ihs4.zn$afe
+#AFE inadequacy
+ihs4.zn <- ihs4.zn %>% mutate(afe.inad = ifelse(ai.afe<10.2, "Inadequate", "Adequate"))
+```
+
+**CATEGORY 2: NUTRIENT DENSITY**
+
+#3. Nutrient Density of HH
+
+```{r}
+#MN density
+ihs4.eden <- ihs4.energy %>% select(HHID, energy.supply)
+ihs4.zn <- merge(x=ihs4.zn, y=ihs4.eden, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.zn <- ihs4.zn %>% mutate(den = zn.supply/energy.supply*1000)
+
+#MN Density inadequacy
+ihs4.zn <- ihs4.zn %>% mutate(den.inad = ifelse(den<(10.2/2.100), "Inadequate", "Adequate"))
+```
+
 > DONE: archive
 
 ```{r}
