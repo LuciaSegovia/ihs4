@@ -1,0 +1,105 @@
+---
+title: "ihs4.figures"
+author: "Kevin Tang"
+date: "11/18/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+> Packages
+
+```{r}
+library(epiDisplay)
+library(foreign)
+library(psych)
+library(tidyverse)
+```
+
+>Data
+
+```{r}
+ihs4.va <- read.csv("/Users/kevintang/Documents/ihs4/data/results/va.csv")
+
+ihs4.intdate <- read.csv("/Users/kevintang/Documents/ihs4/data/hh.info/intdate.csv")
+  ihs4.intdate$intdate <- as.Date(ihs4.intdate$intdate, '%Y-%m-%d')
+  ihs4.intdate$intmonth <- as.Date(ihs4.intdate$intmonth, '%Y-%m-%d')
+  ihs4.intdate <- ihs4.intdate %>% select(-X)
+```
+
+1. Histogram
+
+```{r}
+ihs4.va %>%  ggplot(., aes(x=ai.ame)) + 
+  geom_histogram(binwidth = 50) +
+  theme_bw() +
+  geom_vline(xintercept = 570, linetype="dotted", 
+                color = "red", size=1) +
+  xlim(0,2500) +
+  labs(title = 'Vitamin A Histogram',
+       x = 'Apparent Intake per AME (in mcg RAE)',
+       y = 'Count',
+         caption="Source: IHS4 (2016/17)")
+```
+
+
+2. Percentile curves
+
+```{r}
+#AME percentile curves
+ihs4.va <- ihs4.va %>% arrange(ai.ame) %>% mutate(ame.p.n=1:12447)
+ihs4.va <- ihs4.va %>% mutate(ame.p = ame.p.n/12447*100)
+
+ggplot() +
+  geom_line(data=ihs4.va, aes(x=ame.p, y=ai.ame), color = "black") +
+  theme_bw() + 
+  geom_hline(yintercept=570, linetype="dashed", 
+                color = "red", size=1) +
+  ylim(0,1500) +
+  labs(title = 'Vitamin A Percentile Curves',
+       x = 'Percentile',
+       y = 'Apparent intake per AME (in mcg RAE)',
+         caption="Source: IHS4 (2016/17)")
+```
+
+
+3. Seasonality plots
+
+```{r}
+ihs4.va <- merge(x=ihs4.va, y=ihs4.intdate, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+
+ihs4.va.season <- ihs4.va  %>% group_by(intmonth) %>%
+      summarise(total = median(va.supply/ame, na.rm = TRUE),
+            cergra = median(va.cergra/ame, na.rm = TRUE),
+            tubers = median(va.tubers/ame, na.rm = TRUE),
+             nuts= median(va.nuts/ame, na.rm = TRUE),
+             veg= median(va.veg/ame, na.rm = TRUE),
+             meat= median(va.meat/ame, na.rm = TRUE),
+             fruit= median(va.fruit/ame, na.rm = TRUE),
+             dairy= median(va.dairy/ame, na.rm = TRUE),
+             fat= median(va.fat/ame, na.rm = TRUE),
+             misc= median(va.misc/ame, na.rm = TRUE),
+             vendor= median(va.vendor/ame, na.rm = TRUE),
+             bev= median(va.bev/ame, na.rm = TRUE))
+
+ihs4.va.season %>% ggplot(.) +
+  geom_line(aes(x=intmonth, y=total), color = "black") +
+  geom_line(aes(x=intmonth, y=fruit), color = "orange") +
+  geom_line(aes(x=intmonth, y=meat), color = "red") +
+  geom_line(aes(x=intmonth, y=veg), color = "dark green") +
+  geom_line(aes(x=intmonth, y=tubers), color = "grey") +
+  geom_line(aes(x=intmonth, y=nuts), color = "brown") +
+  geom_line(aes(x=intmonth, y=cergra), color = "tan") +
+  geom_line(aes(x=intmonth, y=dairy), color = "light blue") +
+  geom_line(aes(x=intmonth, y=fat), color = "yellow") +
+  geom_line(aes(x=intmonth, y=misc), color = "purple") +
+  geom_line(aes(x=intmonth, y=vendor), color = "pink") +
+  geom_line(aes(x=intmonth, y=bev), color = "blue") +
+  ylim(0, 800) +
+  theme_bw() +
+  geom_hline(yintercept=570, linetype="dashed", color = "red", size=1) +
+  labs(title = 'Vitamin A seasonality per food group',
+       x = 'Month',
+       y = 'Median Apparent Intake per AME (in mcg RAE)',
+       caption="Source: IHS4 (2016/17)")
+```
+
