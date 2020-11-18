@@ -105,6 +105,43 @@ ihs4.ca <- ihs4.ca %>% rename(ca.cergra = 'sum.cergra$ca.supply',
 
 ```
 
+>THREE METRICS TO MEASURE BROKEN UP INTO TWO CATEGORIES:
+
+**CATEGORY 1: APPARENT INTAKE**
+
+#1. Supply per AME
+
+```{r}
+#MN supply/AME
+ihs4.ca$ai.ame <- ihs4.ca$ca.supply/ihs4.ca$ame
+#AME inadequacy
+ihs4.ca <- ihs4.ca %>% mutate(ame.inad = ifelse(ai.ame<860, "Inadequate", "Adequate"))
+```
+
+#2. Supply per AFE
+
+```{r}
+#MN supply/AFE
+ihs4.ca$ai.afe <- ihs4.ca$ca.supply/ihs4.ca$afe
+#AFE inadequacy
+ihs4.ca <- ihs4.ca %>% mutate(afe.inad = ifelse(ai.afe<860, "Inadequate", "Adequate"))
+```
+
+**CATEGORY 2: NUTRIENT DENSITY**
+
+#3. Nutrient Density of HH
+
+```{r}
+#MN density
+ihs4.eden <- ihs4.energy %>% select(HHID, energy.supply)
+ihs4.ca <- merge(x=ihs4.ca, y=ihs4.eden, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.ca <- ihs4.ca %>% mutate(den = ca.supply/energy.supply*1000)
+
+#MN Density inadequacy
+ihs4.ca <- ihs4.ca %>% mutate(den.inad = ifelse(den<(860/2.100), "Inadequate", "Adequate"))
+```
+
+
 > DONE: archive
 
 ```{r}

@@ -105,6 +105,43 @@ ihs4.thia <- ihs4.thia %>% rename(thia.cergra = 'sum.cergra$thia.supply',
 
 ```
 
+>THREE METRICS TO MEASURE BROKEN UP INTO TWO CATEGORIES:
+
+**CATEGORY 1: APPARENT INTAKE**
+
+#1. Supply per AME
+
+```{r}
+#MN supply/AME
+ihs4.thia$ai.ame <- ihs4.thia$thia.supply/ihs4.thia$ame
+#AME inadequacy
+ihs4.thia <- ihs4.thia %>% mutate(ame.inad = ifelse(ai.ame<1, "Inadequate", "Adequate"))
+```
+
+#2. Supply per AFE
+
+```{r}
+#MN supply/AFE
+ihs4.thia$ai.afe <- ihs4.thia$thia.supply/ihs4.thia$afe
+#AFE inadequacy
+ihs4.thia <- ihs4.thia %>% mutate(afe.inad = ifelse(ai.afe<0.9, "Inadequate", "Adequate"))
+```
+
+**CATEGORY 2: NUTRIENT DENSITY**
+
+#3. Nutrient Density of HH
+
+```{r}
+#MN density
+ihs4.eden <- ihs4.energy %>% select(HHID, energy.supply)
+ihs4.thia <- merge(x=ihs4.thia, y=ihs4.eden, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.thia <- ihs4.thia %>% mutate(den = thia.supply/energy.supply*1000)
+
+#MN Density inadequacy
+ihs4.thia <- ihs4.thia %>% mutate(den.inad = ifelse(den<(0.9/2.100), "Inadequate", "Adequate"))
+```
+
+
 > DONE: archive
 
 ```{r}

@@ -21,6 +21,7 @@ ihs4 <- read.csv("/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_g_final.csv")
 
 hh.hme <- read.csv("/Users/kevintang/Documents/ihs4/data/ame/hme.final.csv")
 
+ihs4.energy <- read.csv("/Users/kevintang/Documents/ihs4/data/results/energy.csv")
 ```
 
 
@@ -103,6 +104,42 @@ ihs4.va <- ihs4.va %>% rename(va.cergra = 'sum.cergra$va.supply',
                                       va.vendor = 'sum.vendor$va.supply',
                                       va.bev = 'sum.drinks$va.supply')
 
+```
+
+>THREE METRICS TO MEASURE BROKEN UP INTO TWO CATEGORIES:
+
+**CATEGORY 1: APPARENT INTAKE**
+
+#1. Supply per AME
+
+```{r}
+#MN supply/AME
+ihs4.va$ai.ame <- ihs4.va$va.supply/ihs4.va$ame
+#AME inadequacy
+ihs4.va <- ihs4.va %>% mutate(ame.inad = ifelse(ai.ame<570, "Inadequate", "Adequate"))
+```
+
+#2. Supply per AFE
+
+```{r}
+#MN supply/AFE
+ihs4.va$ai.afe <- ihs4.va$va.supply/ihs4.va$afe
+#AFE inadequacy
+ihs4.va <- ihs4.va %>% mutate(afe.inad = ifelse(ai.afe<490, "Inadequate", "Adequate"))
+```
+
+**CATEGORY 2: NUTRIENT DENSITY**
+
+#3. Nutrient Density of HH
+
+```{r}
+#MN density
+ihs4.eden <- ihs4.energy %>% select(HHID, energy.supply)
+ihs4.va <- merge(x=ihs4.va, y=ihs4.eden, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.va <- ihs4.va %>% mutate(den = va.supply/energy.supply*1000)
+
+#MN Density inadequacy
+ihs4.va <- ihs4.va %>% mutate(den.inad = ifelse(den<(490/2.100), "Inadequate", "Adequate"))
 ```
 
 > DONE: archive

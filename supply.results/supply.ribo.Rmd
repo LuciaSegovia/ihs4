@@ -105,6 +105,43 @@ ihs4.ribo <- ihs4.ribo %>% rename(ribo.cergra = 'sum.cergra$ribo.supply',
 
 ```
 
+>THREE METRICS TO MEASURE BROKEN UP INTO TWO CATEGORIES:
+
+**CATEGORY 1: APPARENT INTAKE**
+
+#1. Supply per AME
+
+```{r}
+#MN supply/AME
+ihs4.ribo$ai.ame <- ihs4.ribo$ribo.supply/ihs4.ribo$ame
+#AME inadequacy
+ihs4.ribo <- ihs4.ribo %>% mutate(ame.inad = ifelse(ai.ame<1.3, "Inadequate", "Adequate"))
+```
+
+#2. Supply per AFE
+
+```{r}
+#MN supply/AFE
+ihs4.ribo$ai.afe <- ihs4.ribo$ribo.supply/ihs4.ribo$afe
+#AFE inadequacy
+ihs4.ribo <- ihs4.ribo %>% mutate(afe.inad = ifelse(ai.afe<1.3, "Inadequate", "Adequate"))
+```
+
+**CATEGORY 2: NUTRIENT DENSITY**
+
+#3. Nutrient Density of HH
+
+```{r}
+#MN density
+ihs4.eden <- ihs4.energy %>% select(HHID, energy.supply)
+ihs4.ribo <- merge(x=ihs4.ribo, y=ihs4.eden, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.ribo <- ihs4.ribo %>% mutate(den = ribo.supply/energy.supply*1000)
+
+#MN Density inadequacy
+ihs4.ribo <- ihs4.ribo %>% mutate(den.inad = ifelse(den<(1.3/2.100), "Inadequate", "Adequate"))
+```
+
+
 > DONE: archive
 
 ```{r}
