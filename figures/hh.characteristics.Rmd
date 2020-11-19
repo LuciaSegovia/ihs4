@@ -1,0 +1,27 @@
+---
+title: "hh.characteristics"
+author: "Kevin Tang"
+date: "11/18/2020"
+output: html_document
+---
+
+>Dates
+
+```{r}
+ihs4.intdate <- read.csv("/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_a_filt.csv")
+
+ihs4.intdate <- ihs4.intdate %>% select(HHID, interviewDate)
+ihs4.intdate <- ihs4.intdate %>% rename(intdate = 'interviewDate')
+
+ihs4.intdate$intdate <- as.Date(ihs4.intdate$intdate, '%Y-%m-%d')
+ihs4.intdate$month_yr <-format(as.Date(ihs4.intdate$intdate), "%Y-%m")
+ihs4.intdate$intmonth <- as.Date(paste(ihs4.intdate$month_yr,"-01",sep=""))
+
+ihs4.intdate <- ihs4.intdate %>% select(-month_yr)
+```
+
+> DONE: archive
+
+```{r}
+write.csv(ihs4.intdate, "/Users/kevintang/Documents/ihs4/data/hh.info/intdate.csv")
+```

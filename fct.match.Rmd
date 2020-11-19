@@ -1,0 +1,35 @@
+---
+title: "fct.match"
+author: "Kevin Tang"
+date: "11/19/2020"
+output: html_document
+---
+
+> Packages
+
+```{r}
+library(epiDisplay)
+library(foreign)
+library(psych)
+library(tidyverse)
+```
+
+>Data
+
+```{r}
+ihs4 <- read.csv("/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_g_nep.csv")
+
+fctmatch <- read.csv("/Users/kevintang/Documents/ihs4/data/fct.match/fct.match.v2.csv")
+```
+
+>Combining food consumption quantity with food composition data 
+
+```{r}
+ihs4 <- merge(x=ihs4, y=fctmatch , by.x='item_code', by.y='code.ihs', fill=-9999, all.x = TRUE) %>% arrange(item_code) %>% arrange(HHID)
+```
+
+> DONE: archive
+
+```{r}
+write.csv(ihs4, "/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_g_final.csv")
+```

@@ -1,0 +1,138 @@
+---
+title: "fortification.model"
+author: "Kevin Tang"
+date: "11/18/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+> Packages
+
+```{r}
+library(epiDisplay)
+library(foreign)
+library(psych)
+library(tidyverse)
+```
+
+>Data
+
+```{r}
+ihs4 <- read.csv("/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_g_final.csv")
+d <- read.csv("/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_g_processed.csv")
+
+hh.hme <- read.csv("/Users/kevintang/Documents/ihs4/data/ame/hme.final.csv")
+```
+
+>OIL
+
+```{r}
+d.oil <- d %>% filter(item_code=="803") %>% select(HHID, consYN)
+ihs4.oil <- ihs4 %>% filter(item_code=="803")
+ihs4.oil <- merge(x=ihs4.oil, y=hh.hme , by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.oil <- merge(x=ihs4.oil, y=d.oil , by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.oil <- ihs4.oil %>% select(HHID, g100_d_nep, ame, afe, pc, consYN)
+ihs4.oil <- merge(x=ihs4.oil, y=ihs4.sep, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.oil$g <- ihs4.oil$g100_d_nep*100
+ihs4.oil$g.afe <- ihs4.oil$g/ihs4.oil$afe
+
+ihs4.oil %>% group_by(sep) %>% count(consYN==1)
+ihs4.oil %>% group_by(district) %>% 
+  summarize(Median = median(g.afe, na.rm=TRUE),
+            IQR = IQR(g.afe, na.rm=TRUE)) %>% arrange(Median)
+
+ihs4.oil %>% count(sep==5)
+```
+
+>SUGAR
+
+```{r}
+d.sugar <- d %>% filter(item_code=="801") %>% select(HHID, consYN)
+ihs4.sugar <- ihs4 %>% filter(item_code=="801")
+ihs4.sugar <- merge(x=ihs4.sugar, y=hh.hme , by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.sugar <- merge(x=ihs4.sugar, y=d.sugar , by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.sugar <- ihs4.sugar %>% select(HHID, g100_d_nep, ame, afe, pc, consYN)
+ihs4.sugar <- merge(x=ihs4.sugar, y=ihs4.sep, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.sugar$g <- ihs4.sugar$g100_d_nep*100
+ihs4.sugar$g.afe <- ihs4.sugar$g/ihs4.sugar$afe
+
+ihs4.sugar %>% group_by(district) %>% count(consYN==1)
+
+ihs4.sugar %>% group_by(urban) %>% 
+  summarize(Median = median(g.afe, na.rm=TRUE),
+            IQR = IQR(g.afe, na.rm=TRUE))
+
+```
+
+>WHEAT FLOUR
+
+```{r}
+d.wflour <- d %>% filter(item_code=="110") %>% select(HHID, consYN)
+ihs4.wflour <- ihs4 %>% filter(item_code=="110")
+ihs4.wflour <- merge(x=ihs4.wflour, y=hh.hme , by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.wflour <- merge(x=ihs4.wflour, y=d.wflour , by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.wflour <- ihs4.wflour %>% select(HHID, g100_d_nep, ame, afe, pc, consYN)
+ihs4.wflour <- merge(x=ihs4.wflour, y=ihs4.sep, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.wflour$g <- ihs4.wflour$g100_d_nep*100
+ihs4.wflour$g.afe <- ihs4.wflour$g/ihs4.wflour$afe
+
+ihs4.wflour  %>% group_by(urban) %>% count(consYN==1)
+ihs4.wflour %>% group_by(urban) %>% 
+  summarize(Median = median(g.afe, na.rm=TRUE),
+            IQR = IQR(g.afe, na.rm=TRUE)) %>% arrange(Median)
+```
+
+
+>BREAD
+
+```{r}
+d.bread <- d %>% filter(item_code=="111") %>% select(HHID, consYN)
+ihs4.bread <- ihs4 %>% filter(item_code=="111")
+ihs4.bread <- merge(x=ihs4.bread, y=hh.hme , by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.bread <- merge(x=ihs4.bread, y=d.bread , by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.bread <- ihs4.bread %>% select(HHID, g100_d_nep, ame, afe, pc, consYN)
+ihs4.bread <- merge(x=ihs4.bread, y=ihs4.sep, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.bread$g <- ihs4.bread$g100_d_nep*100
+ihs4.bread$g.afe <- ihs4.bread$g/ihs4.bread$afe
+
+ihs4.bread  %>% group_by(urban) %>% count(consYN==1)
+ihs4.bread %>% group_by(urban) %>% 
+  summarize(Median = median(g.afe, na.rm=TRUE),
+            IQR = IQR(g.afe, na.rm=TRUE)) %>% arrange(Median)
+```
+
+>MANDAZI (DONUTS)
+
+```{r}
+d.mandazi <- d %>% filter(item_code=="827") %>% select(HHID, consYN)
+ihs4.mandazi <- ihs4 %>% filter(item_code=="827")
+ihs4.mandazi <- merge(x=ihs4.mandazi, y=hh.hme , by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.mandazi <- merge(x=ihs4.mandazi, y=d.mandazi , by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.mandazi <- ihs4.mandazi %>% select(HHID, g100_d_nep, ame, afe, pc, consYN)
+ihs4.mandazi <- merge(x=ihs4.mandazi, y=ihs4.sep, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.mandazi$g <- ihs4.mandazi$g100_d_nep*100
+ihs4.mandazi$g.afe <- ihs4.mandazi$g/ihs4.mandazi$afe
+
+ihs4.mandazi   %>% group_by(urban) %>% count(consYN==1)
+ihs4.mandazi %>% group_by(urban) %>% 
+  summarize(Median = median(g.afe, na.rm=TRUE),
+            IQR = IQR(g.afe, na.rm=TRUE)) %>% arrange(Median)
+```
+
+>SCONES
+
+```{r}
+d.scone <- d %>% filter(item_code=="112") %>% select(HHID, consYN)
+ihs4.scone <- ihs4 %>% filter(item_code=="112")
+ihs4.scone <- merge(x=ihs4.scone, y=hh.hme , by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.scone <- merge(x=ihs4.scone, y=d.scone , by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.scone <- ihs4.scone %>% select(HHID, g100_d_nep, ame, afe, pc, consYN)
+ihs4.scone <- merge(x=ihs4.scone, y=ihs4.sep, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.scone$g <- ihs4.scone$g100_d_nep*100
+ihs4.scone$g.afe <- ihs4.scone$g/ihs4.scone$afe
+
+ihs4.scone  %>% group_by(urban) %>% count(consYN==1)
+ihs4.scone  %>% group_by(urban) %>% 
+  summarize(Median = median(g.afe, na.rm=TRUE),
+            IQR = IQR(g.afe, na.rm=TRUE)) %>% arrange(Median)
+```
