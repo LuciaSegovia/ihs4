@@ -136,3 +136,17 @@ ihs4.scone  %>% group_by(urban) %>%
   summarize(Median = median(g.afe, na.rm=TRUE),
             IQR = IQR(g.afe, na.rm=TRUE)) %>% arrange(Median)
 ```
+
+>Inadequacy & quantity
+
+```{r}
+ihs4.fol <- merge(x=ihs4.fol, y=ihs4.sep, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ihs4.fol.f <- merge(x=ihs4.fol.f, y=ihs4.sep, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+
+ihs4.fol.f   %>% group_by(urban.x) %>% count(den.inad=="Inadequate") 
+
+ihs4.fol.f  %>% group_by(urban.x) %>% summarise(
+  median = median(den, na.rm = TRUE),
+  iqr = IQR(den, na.rm = TRUE))
+```
+

@@ -64,17 +64,9 @@ We need to add a variable to group items by the food group that a food item fell
 ihs4 <- merge(x=ihs4, y=foodgroup, by.x='item_code', by.y='code', fill=-9999, all.x = TRUE) %>% arrange(item_code) %>% arrange(HHID)
 ```
 
->Combining food consumption quantity with food composition data 
-
-```{r}
-ihs4.f <- ihs4 %>% select(HHID, item_code, g100_d_nep, food.group)
-fctmatch.c <- fctmatch %>% select(-fooditem) %>% arrange(code.ihs)
-
-ihs4.f <- merge(x=ihs4.f, y=fctmatch.c , by.x='item_code', by.y='code.ihs', fill=-9999, all.x = TRUE) %>% arrange(item_code) %>% arrange(HHID)
-```
-
 > DONE: archive
 
 ```{r}
-write.csv(ihs4.f, "/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_g_final.csv")
+ihs4 <- ihs4 %>% select(HHID, item_code, g100_d_nep, food.group)
+write.csv(ihs4, "/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_g_nep.csv")
 ```
