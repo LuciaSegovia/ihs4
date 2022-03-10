@@ -1,4 +1,4 @@
-# Micronutrient analysis of the Fourth Integrated Household Survey of Malawi
+# Micronutrient Analysis of the Fourth Integrated Household Survey of Malawi
 
 
 Analysis of differences between nutrient density and adult-male equivalent metrics using Malawi's Fourth Integrated Household Survey (IHS4)
