@@ -7,11 +7,11 @@ output: html_document
 
 INTRO 
 
-1) We need to identify where the data on househould consumption is stored. 
+1) We need to identify where the data on household consumption is stored. 
 
 For ish4, the data on food consumption was recorded as part of the household questionnaire (datasets starting w/ HH_). Within this questionnaire, data on food consumption is recorded in the module G (Food consumption). Within the module G, we find 3 that set, each one with different level of aggregation. We are interested in g1 which is food recorded at food item level (disaggregated data). 
 
-Hence, we need to load the file hh_mod_g1 (household questionaire module G, 1- consumption at item level). Once it is loaded, we can check that the file is loaded correctly by checking that the observations (cases) and variables match the one reported in the worldbank website (https://microdata.worldbank.org/index.php/catalog/2936/data-dictionary).
+Hence, we need to load the file hh_mod_g1 (household questionnaire module G, 1- consumption at item level). Once it is loaded, we can check that the file is loaded correctly by checking that the observations (cases) and variables match the one reported in the worldbank website (https://microdata.worldbank.org/index.php/catalog/2936/data-dictionary).
 
 
 
@@ -32,12 +32,14 @@ options(scipen = 10, digits=3)
 theme_set(theme_bw())
 
 #--- Read in the file
-ihs4 <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/hces/mwi/ihs2016/hh_mod_g1.csv")
-fcode <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/analysis/mwi_ihs4/mwi_item_code.csv")
-ucode <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/analysis/mwi_ihs4/mwi_unit_code.csv")
+
+ihs4 <- read.csv(here::here("data", "hh_mod_g1.csv"))
+fcode <- read.csv(here::here("data", "mwi_item_code.csv"),  fileEncoding="UTF-8-BOM")
+ucode <- read.csv(here::here("data", "mwi_unit_code.csv"), fileEncoding="UTF-8-BOM")
+
 ```
 
->CHANGE VARIABLE NAMES AND DATA CLASS
+## CHANGE VARIABLE NAMES AND DATA CLASS
 
 The next step, it is to standardize the variables. This is important because we are going to be using data from different countries and the variable names will changes accross quesitonnaire. However, if we want to standardize (or harmonize) our cleaning and processing structure, it is best to standardize variables names (when possible). Within the data dictionary we can find a description of each variable. And, below is the codebook with the new variable names.
 
@@ -291,13 +293,14 @@ ihs4$item_code[ihs4$item_oth=='SOYA'] <- 314
 
 ```
 
-> MISC. CLEANING FUNCTIONS
+## MISC. CLEANING FUNCTIONS
 
 Create unique ID variable
 ```{r}
 ihs4$measure_id <- paste0(as.character(ihs4$item_code),"_", as.character(ihs4$cons_unitA))
 ihs4$measure_id[is.na(ihs4$cons_unit)] <- NA
 
-write.csv(ihs4, "/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/hces/mwi/ihs2016/hh_mod_g_clean.csv")
+write.csv(ihs4, here::here("inter-output", "hh_mod_g_clean.csv"))
+
 ```
 

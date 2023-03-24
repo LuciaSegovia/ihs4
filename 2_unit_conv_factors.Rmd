@@ -21,33 +21,35 @@ d4 <- consed %>% count(., "measure_id") %>% arrange(desc(freq))
 Import list of all conversion factors together into one master list
 ```{r}
 #Edward's unit
-uconv_ed <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/edward_phd/unit_conversion.csv")
+uconv_ed <- read.csv(here::here("data", "unit_conversion.csv"))
 uconv_ed <- uconv_ed %>% select(MeasureID, StandardUnit)
 unitconv <- merge(x=d4, y=uconv_ed, by.x='measure_id', by.y='MeasureID', fill=-9999, all.x = TRUE)
 
 #World Bank Non-Standard Units for the Collection of Food Quantity Guidebook (IHS3)
-wb_ihs4a <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/analysis/mwi_ihs4/conv_factors_mwi/clean/ihs4factors_v2.csv")
+wb_ihs4a <- read.csv(here::here("data", "ihs4factors_v2.csv"))
 uconv_wb_mwi4 <- wb_ihs4a %>% select(measure_id, wbihs4fac_n, wbihs4fac_c, wbihs4fac_s)
 unitconv <- merge(x=unitconv, y=uconv_wb_mwi4, by.x='measure_id', by.y='measure_id', fill=-9999, all.x = TRUE)
 
 #World Bank Non-Standard Units for the Collection of Food Quantity Guidebook (IHS4)
-uconv_wb_mwi <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/analysis/mwi_ihs4/conv_factors_mwi/clean/wb_conv_factors_mwi.csv")
+uconv_wb_mwi <- read.csv(here::here("data", "wb_conv_factors_mwi.csv"))
 uconv_wb_mwi3 <- uconv_wb_mwi %>% select(measure_id, wb_factor_n, wb_factor_c, wb_factor_s)
 unitconv <- merge(x=unitconv, y=uconv_wb_mwi3, by.x='measure_id', by.y='measure_id', fill=-9999, all.x = TRUE)
 
 #IFPRI Conversion Factors IHS3
-uconv_ifpri_mwiihs3 <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/analysis/mwi_ihs4/conv_factors_mwi/clean/ifpri_conv_mwiihs3.csv")
+uconv_ifpri_mwiihs3 <- read.csv(here::here("data", "ifpri_conv_mwiihs3.csv"))
 uconv_ifpri_mwiihs3$measure_id <-paste0(as.character(uconv_ifpri_mwiihs3$itemcode),"_", as.character(uconv_ifpri_mwiihs3$unitcode))
 unitconv <- merge(x=unitconv, y=uconv_ifpri_mwiihs3, by.x='measure_id', by.y='measure_id', fill=-9999, all.x = TRUE)
 
 #IFPRI Conversion Factors IHS2
-uconv_ifpri_mwiihs2 <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/analysis/mwi_ihs4/conv_factors_mwi/clean/ifpri_conv_mwiihs2.csv")
+uconv_ifpri_mwiihs2 <- read.csv(here::here("data", "ifpri_conv_mwiihs2.csv"))
 uconv_ifpri_mwiihs2$measure_id <-paste0(as.character(uconv_ifpri_mwiihs2$itemcode),"_", as.character(uconv_ifpri_mwiihs2$unitcode))
 uconv_ifpri_mwiihs2 <- uconv_ifpri_mwiihs2 %>% select(measure_id, cf_ihs2)
 unitconv <- merge(x=unitconv, y=uconv_ifpri_mwiihs2, by.x='measure_id', by.y='measure_id', fill=-9999, all.x = TRUE)
 ```
 
-Hierarchally select IHS4 conversion factor from the available lists of conversion factors
+
+Hierarchically select IHS4 conversion factor from the available lists of conversion factors
+
 ```{r}
 #New data frame cleaning up the master list of all factors
 factors <- unitconv %>% select(measure_id, freq, itemname, unitname, wbihs4fac_n, wbihs4fac_c, wbihs4fac_s, wb_factor_n, wb_factor_c, wb_factor_s, cf_ihs3, cf_ihs2, uconv_ed)
@@ -66,14 +68,14 @@ factors %>% filter(.,is.na(ihs4factor_n))
 
 factors <- factors %>% select(measure_id, freq, wbfactor, ifpri3factor, ifpri2factor, edfactor, ihs4factor, item, unit) %>% arrange(., measure_id)
 
-write.csv(factors, '/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/analysis/mwi_ihs4/conv_factors_mwi/clean/ihs4factors_v3.csv')
+write.csv(factors, here::here("inter-output", "ihs4factors_v3.csv"))
 
 ```
 
 CLEANING MASTER LIST OF UNIT CONVERSION FACTORS
 
 ```{r}
-factors2 <- read.csv('/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/analysis/mwi_ihs4/conv_factors_mwi/clean/ihs4factors_v3.csv')
+factors2 <- read.csv(here::here("inter-output", "ihs4factors_v3.csv"))
 factors2 <- merge(x=factors2, y=ucode, by.x='ucode', by.y='code', fill=-9999, all.x = TRUE)
 factors2 <- merge(x=factors2, y=fcode, by.x='fcode', by.y='code', fill=-9999, all.x = TRUE)
 
@@ -114,12 +116,13 @@ factors2 %>% filter(ucode=="43") %>% select(measure_id, ucode, ihs4factor_n, ihs
 
 factors2 %>% filter(ucode=="65") %>% select(measure_id, ucode, ihs4factor_n, ihs4factor_c, ihs4factor_s)
 
-write.csv(factors2, '/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/analysis/mwi_ihs4/conv_factors_mwi/clean/ihs4factors_v4.csv')
+write.csv(factors2, here::here("inter-output", "ihs4factors_v4.csv"))
+
 ```
 
 CREATE VARIABLES FOR FACTORS IN N, C, S
 ```{r}
-wb_ihs4 <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/analysis/mwi_ihs4/conv_factors_mwi/ihs4/wb_ihs4_unit.csv")
+wb_ihs4 <- read.csv(here::here("data", "wb_ihs4_unit.csv"))
 wb_ihs4$measure_id <- paste0(as.character(wb_ihs4$item),"_", as.character(wb_ihs4$unit))
 
 north <- wb_ihs4 %>% filter(region==1) %>% select(measure_id, item, unit, ihps_plus_aug)
@@ -133,24 +136,22 @@ colnames(wb_ihs4a)[4] <- "wbihs4fac_n"
 colnames(wb_ihs4a)[5] <- "wbihs4fac_c"
 colnames(wb_ihs4a)[6] <- "wbihs4fac_s"
 
-write.csv(wb_ihs4a, "/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/analysis/mwi_ihs4/conv_factors_mwi/ihs4/wb_ihs4_unit_v2.csv")
+write.csv(wb_ihs4a, here:here("inter-output", "wb_ihs4_unit_v2.csv"))
 ```
 
 CREATE BAR CHARTS OF ALL FOOD ITEM UNITS
 ```{r}
-factors <- read.csv('/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/analysis/mwi_ihs4/conv_factors_mwi/clean/ihs4factors_v4.csv')
+factors <- read.csv(here::here("inter-output", "ihs4factors_v4.csv"))
 factors2 <- melt(factors[,c('unit','ihs4factor_n','ihs4factor_c','ihs4factor_s')],id.vars = 1)
 factors3 <- factors %>% select(fcode, item, unit, ihs4factor_n)
-write.csv(factors3,"/Users/kevintang/Desktop/factors3.csv") 
+write.csv(factors3, here::here("inter-output", "factors3.csv"))
 
 factors %>% filter(fcode==105) %>% arrange(freq) %>% ggplot(., aes(x=reorder(unit, -ihs4factor_n), y=ihs4factor_n)) +
    geom_bar(stat = "identity") +
    coord_flip()+
    labs(y = "Factor (in kg)")
-   ggsave("105.png")
+   ggsave(here::here("figures",  "105.png"))
    
-   getwd()
-   setwd("/Users/kevintang/Desktop/plots")
  
 # list of values to loop over
 uniq_species = unique(factors$item)
@@ -166,7 +167,7 @@ for (i in 1:length(uniq_species)) {
     labs(y = "Unit conversion factor to kg") +
     ggtitle(uniq_species[i]) 
 
-  ggsave(temp_plot, file=paste0("plot_",uniq_fcode[i],".png"), width = 14, height = 10, units = "cm")
+  ggsave(temp_plot, file=here::here("figures", paste0("plot_",uniq_fcode[i],".png")), width = 14, height = 10, units = "cm")
 }
 ```
 
@@ -177,8 +178,7 @@ library(plyr)      # for dlply
 library(gridExtra) # for marrangeGrob
 
 
-setwd("/Users/kevintang/Desktop/plots")
-factors <- read.csv("factors3.csv")
+factors <- read.csv(here::here("inter-ouput", "factors3.csv"))
 factors <- subset(factors, item != "")
 
 # list of values to loop over
@@ -194,7 +194,7 @@ for (i in uniq_species) {
     coord_flip() +
     labs(y = "Unit conversion factor to kg")
   
-  ggsave(temp_plot, file=paste0("plot_", i,".png"), width = 14, height = 10, units = "cm")
+  ggsave(temp_plot, file=here::here("figures", paste0("plot_", i,".png")), width = 14, height = 10, units = "cm")
 }
  
 # Create pdf doc of plots
@@ -206,6 +206,6 @@ plots <- dlply(factors, ~fcode,
                  theme(plot.title = element_text(hjust = 0.5),
                        plot.subtitle = element_text(hjust = 0.5)) + theme_bw()) 
 mg <- marrangeGrob(grobs = plots, nrow=2, ncol=2, top = NULL)
-ggsave("plotdoc.pdf", mg, height = 7, width = 13, units = "in")
+ggsave(here::here("figures", "plotdoc.pdf"), mg, height = 7, width = 13, units = "in")
 
 ```

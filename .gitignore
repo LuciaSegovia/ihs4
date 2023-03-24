@@ -1,0 +1,14 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+
+# Ignore data folder
+
+data/
+inter-output/
+
+# Ignore figures and pdf
+*.pdf
+*.png
