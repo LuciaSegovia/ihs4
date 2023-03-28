@@ -1,0 +1,41 @@
+---
+title: "Untitled"
+format: html
+editor: source
+---
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Non-standard units for own production
+
+Assumptions under units reported as "others" (prod_unitA==23):
+
+"PLATE" under item code 23, we are using the unit code = 6. 
+"NO. 24 PLATE" under 7B
+"SPOON" was assigned to "TEASPOON" unit_code(20)
+"TINA (FLAT)" - 25A
+"TINA (HEAPED)" , "MEDIUM (PLATE)" - 25B
+"20L PAIL" - 4 
+
+
+Further info is needed for:
+
+- The unit under "heap" have two type of small to large. It should be further checked!
+
+Units not found in the master NSU file (nsu.factor):
+
+- Bottle as it is not reported. 
+- Jar is not reported
+- Pot
+- Slice
+- Dengu --> Container (bamboo)
+
+
+Finally, what we have done is that we have used the "consumed items" cleaned and assigned the same quantity as the code/quantities were the same. 
+
+We checked the maize and products consumed by region, and we can see that maize cooked (boiled or roasted) was not reported as "own produciton". 
+
+We also identify some items wrongly code, so the item_code should be 102 instead of 101. We are amending it in the "1_ihs4_cleaning.Rmd"
+

@@ -50,13 +50,13 @@ Then, to identify variables that report quantity will be those that has an 'a' a
 
 Codebook (https://microdata.worldbank.org/index.php/catalog/2939/datafile/F192)
 
-**Variable names need to be corrected!!** gift and purchased have the same code
 
-id =            case_id              purc_quant =    hh_g04a              gift_quant =    hh_g04a
-consYN =        hh_g01               purc_unitA =    hh_g04b              gift_unitA =    hh_g04b
-item_code =     hh_g02               purc_unit =     hh_g04b_label        gift_unit =     hh_g04b_label
-item_oth =      hh_g01_oth           purc_unit_oth = hh_g04b_oth          gift_unit_oth = hh_g04b_oth
-                                     purc_unit_size= hh_g04c              gift_unit_size= hh_g04c
+
+id =            case_id              purc_quant =    hh_g04a              gift_quant =    hh_g07a
+consYN =        hh_g01               purc_unitA =    hh_g04b              gift_unitA =    hh_g07b
+item_code =     hh_g02               purc_unit =     hh_g04b_label        gift_unit =     hh_g07b_label
+item_oth =      hh_g01_oth           purc_unit_oth = hh_g04b_oth          gift_unit_oth = hh_g07b_oth
+                                     purc_unit_size= hh_g04c              gift_unit_size= hh_g07c
                                      purc_price =    hh_g05
              
 cons_quant =    hh_g03a              prod_quant =    hh_g06a
@@ -134,13 +134,20 @@ ihs4$gift_unit_oth <- as.factor(ihs4$gift_unit_oth)
 ihs4$gift_unit_size <- as.factor(ihs4$gift_unit_size)
 ```
 
->MERGE IN UNIT AND ITEM LABELS
+## MERGE IN UNIT AND ITEM LABELS
+
+We are merging the food code with the food description and the unit with the unit description. We are also checking that the items and codes are matching. 
 
 ```{r}
 ihs4 <- merge(x=ihs4, y=fcode, by.x='item_code', by.y='code', fill=-9999, all.x = TRUE)
 ihs4 <- merge(x=ihs4, y=ucode, by.x='cons_unit', by.y='code', fill=-9999, all.x = TRUE)
 ihs4 <- ihs4 %>% arrange(cons_unit) %>% arrange(item_code) %>% arrange(HHID)
 ihs4 <- ihs4 %>% select(id:consYN, item_code, item, item_oth:cons_unitA, cons_unit, unit, cons_unit_oth:gift_unit_size)
+
+ihs4 %>%  dplyr::count(item_code, item) %>% arrange(item_code)
+
+ihs4 %>%  filter(item_code == "102") %>% distinct(item_code, item)
+
 ```
 
 
@@ -254,7 +261,9 @@ ihs4[ihs4$cons_unit_oth == "SATCHET (150 GRAM)", "cons_unit"] <- 43
 ihs4[ihs4$cons_unit_oth == "BOTTLE" & ihs4$item_code == "803", "cons_unit"] <- 15
 ```
 
->CLEANING UNITS LABELLED AS "OTHER"
+# CLEANING FOODS LABELLED AS "OTHER"
+
+
 
 ```{r}
 item_other <- ihs4 %>% count(item_oth) %>% arrange(desc(n))
@@ -300,7 +309,9 @@ Create unique ID variable
 ihs4$measure_id <- paste0(as.character(ihs4$item_code),"_", as.character(ihs4$cons_unitA))
 ihs4$measure_id[is.na(ihs4$cons_unit)] <- NA
 
-write.csv(ihs4, here::here("inter-output", "hh_mod_g_clean.csv"))
+ihs4 %>%  dplyr::count(item_code, item, item_oth) %>% arrange(item_code)
+
+write.csv(ihs4, here::here("data","inter-output", "hh_mod_g_clean.csv"))
 
 ```
 

@@ -19,14 +19,26 @@ options(digits=2)
 
 ```
 
->Data
+## Loading the data
+
+To run this script we need the foods consumed cleaned, to get the file "hh_mod_g_clean.csv", run the script "1_ish4_cleaning.Rmd". 
+
 
 ```{r}
-ihs4 <- read.csv("/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_g_clean.csv")
+ihs4 <- read.csv(here::here("data", "inter-output",  "hh_mod_g_clean.csv"))
 
-nsu.factors <-read.csv("/Users/kevintang/Documents/ihs4/data/nutrient.supply/nsu.factors.csv")
+names(ihs4)
+dim(ihs4)
 
-hh_id <- read.csv("/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_a_filt.csv")
+nsu.factors <-read.csv(here::here("data", "factors", "nsu.factors.csv"),  fileEncoding="UTF-8-BOM")
+
+names(nsu.factors)
+dim(nsu.factors)
+
+
+hh_id <- read.csv(here::here("data", "hh_mod_a_filt.csv"))
+
+names(hh_id)
 
 ```
 
@@ -63,7 +75,7 @@ ihs4 <- merge(x=ihs4, y=region , by.x='id', by.y='case_id', fill=-9999, all.x = 
 ihs4 <- merge(x=ihs4, y=nsu.factors , by.x='measure_id', by.y='measure_id', fill=-9999, all.x = TRUE) %>% arrange(item_code) %>% arrange(id)
 ```
 
-3. Create a variable selecting the appropritate NSU factor based on the HH reported region
+3. Create a variable selecting the appropitate NSU factor based on the HH reported region
 
 ```{r}
 ihs4$ihs4factor_n <- ifelse(ihs4$region == 1, ihs4$ihs4factor_n, NA)
@@ -88,6 +100,6 @@ ihs4$kg_d <- ihs4$cons_kg/7
 > DONE: archive
 
 ```{r}
-write.csv(ihs4, "/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_g_processed.csv")
+write.csv(ihs4, here::here("data", "inter-output" , "hh_mod_g_processed.csv"))
 ```
 
