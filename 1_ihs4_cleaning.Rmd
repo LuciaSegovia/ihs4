@@ -1,11 +1,14 @@
 ---
 title: "ihs4_cleaning"
-author: "Kevin Tang"
+author: 
+- "Author - Kevin Tang"
+- "Collaborator - Lucia Segovia de la Revilla"
 date: "3/3/2020"
+last-modified: "2023/03/28"
 output: html_document
 ---
 
-INTRO 
+## INTRO 
 
 1) We need to identify where the data on household consumption is stored. 
 
@@ -141,6 +144,7 @@ We are merging the food code with the food description and the unit with the uni
 ```{r}
 ihs4 <- merge(x=ihs4, y=fcode, by.x='item_code', by.y='code', fill=-9999, all.x = TRUE)
 ihs4 <- merge(x=ihs4, y=ucode, by.x='cons_unit', by.y='code', fill=-9999, all.x = TRUE)
+
 ihs4 <- ihs4 %>% arrange(cons_unit) %>% arrange(item_code) %>% arrange(HHID)
 ihs4 <- ihs4 %>% select(id:consYN, item_code, item, item_oth:cons_unitA, cons_unit, unit, cons_unit_oth:gift_unit_size)
 
@@ -161,8 +165,8 @@ There are a number of item units recorded as "23" but described as existing ucod
 We need to change these units from "23" to their appropriate units as in this analysis any item without a standard unit will be excluded. 
 ```{r}
 ihs4 %>% filter(cons_unitA==23)
-ihs4 %>% filter(cons_unit_oth!= "") %>% count(cons_unit_oth) %>% arrange(desc(n)) #which units are listed as "other"
-ihs4 %>% filter(cons_unitA==23) %>% count(cons_unit_oth) %>% arrange(desc(n)) #which units are listed as "other" have not been converted to standard unit
+ihs4 %>% filter(cons_unit_oth != "") %>% dplyr::count(cons_unit_oth) %>% arrange(desc(n)) #which units are listed as "other"
+ihs4 %>% filter(cons_unitA==23) %>% dplyr::count(cons_unit_oth) %>% arrange(desc(n)) #which units are listed as "other" have not been converted to standard unit
 
 ihs4 %>% filter(., cons_unit_oth=="HEAP") %>% select(item, item_code, cons_quant, cons_unitA, cons_unit, cons_unit_oth) %>% arrange(item)
 ihs4 %>% filter(item_code=="803") %>% select(item, item_code, cons_quant, cons_unitA, cons_unit, cons_unit_oth) %>% arrange(desc(cons_unitA))
@@ -263,42 +267,56 @@ ihs4[ihs4$cons_unit_oth == "BOTTLE" & ihs4$item_code == "803", "cons_unit"] <- 1
 
 # CLEANING FOODS LABELLED AS "OTHER"
 
-
+Changing the way the food other are allocated to avoid overwriting items that were assigned to fixed codes. For example, there is one food that has item_oth == 'GRAIN MEAL', howeve it is also coded under "Maize ufa refined (fine flour)" (102), if we run the code without filtering out those items that were already allocated to a category, then we are changing the food code from code 102 to 101, which may have some impact in the nutrient quantities due to the content of the different flours. 
 
 ```{r}
-item_other <- ihs4 %>% count(item_oth) %>% arrange(desc(n))
+other_foods <- fcode %>% filter(grepl("other|Specify", item, ignore.case = TRUE)) %>% pull(code)
 
-ihs4 %>% filter(item_oth=="BIRD")
+ihs4 %>% filter(grepl("\\s", item_oth) & item_code %in% other_foods) 
+ihs4 %>% filter(grepl("\\s", item_oth) & !item_code %in% other_foods) %>% distinct(item_code, item)
+
+ihs4 %>% dplyr::count(item_code, item_oth) %>% arrange(desc(n))
+
+ihs4 %>% filter(grepl("\\s", item_oth) & item_code %in% other_foods)  %>% dplyr::count(item_code, item_oth) %>% arrange(desc(n))
+ihs4 %>% filter(grepl("\\s", item_oth) & item_code %in% other_foods)  %>% dplyr::count(item_code) %>% arrange(desc(n))
+
+ihs4 %>% filter(grepl("BIRD", item_oth))  %>% dplyr::count(item_code, item_oth) 
+ihs4 %>% filter(grepl("cassava", item, ignore.case = TRUE))  %>% dplyr::count(item_code, item) 
+
+fcode %>% filter(code=="821")
+
 ```
 
+
+We are generating a new variable for the amended item codes. We are going to name it item_code_st (as for standardised code). We are not fixing those called other that are actually other foods. As we could include them as new food item matching as done for FAO work. They are left here but commented so they are not running. 
+
+
 ```{r}
-ihs4$item_code[ihs4$item_oth=='BAKED AFRICAN CAKE'] <- 836
-ihs4$item_code[ihs4$item_oth=='GRAIN MEAL'] <- 101
-ihs4$item_code[ihs4$item_oth=='GRANMILL'] <- 101
-ihs4$item_code[ihs4$item_oth=='MANDASI'] <- 827
-ihs4$item_code[ihs4$item_oth=='PORK'] <- 506
-ihs4$item_code[ihs4$item_oth=='PEANUT'] <- 304  
-ihs4$item_code[ihs4$item_oth=='PIGEON PEAS'] <- 303  
-ihs4$item_code[ihs4$item_oth=='CUCUMBER'] <- 409  
-ihs4$item_code[ihs4$item_oth=='SMALL FISH'] <- 5023   
-ihs4$item_code[ihs4$item_oth=='SODA'] <- 907 
-ihs4$item_code[ihs4$item_oth=='FRIED MIXTURE OF MAIZE FLOUR/BANANA AND SODA'] <- 827 
-ihs4$item_code[ihs4$item_oth=='MIXTURE OF MAIZE FLOUR/BANANA/SUGAR'] <- 827 
-ihs4$item_code[ihs4$item_oth=='IRISH POTATOES AND FLOUR'] <- 821
-ihs4$item_code[ihs4$item_oth=='SCONES'] <- 112 
-ihs4$item_code[ihs4$item_oth=='WINE'] <- 914
-ihs4$item_code[ihs4$item_oth=='TEA'] <- 901
-ihs4$item_code[ihs4$item_oth=='BIRD'] <- 509
-ihs4$item_code[ihs4$item_oth=='DUCKMEAT'] <- 509
-ihs4$item_code[ihs4$item_oth=='COW PEAS'] <- 308
-ihs4$item_code[ihs4$item_oth=='BONONGWE'] <- 403
-ihs4$item_code[ihs4$item_oth=='CASSAVA LEAVES'] <- 406
-ihs4$item_code[ihs4$item_oth=='CHIKONDAMOYO'] <- 836
-ihs4$item_code[ihs4$item_oth=='CHISOSOANDBONONGWE'] <- 403
-ihs4$item_code[ihs4$item_oth=='FRESHBEANS'] <- 302
-ihs4$item_code[ihs4$item_oth=='GROUND AND COOKED BEANS'] <- 302
-ihs4$item_code[ihs4$item_oth=='MAIZEMEAL'] <- 101
-ihs4$item_code[ihs4$item_oth=='SOYA'] <- 314
+
+ihs4 <- ihs4 %>% 
+  mutate(item_code_st = ifelse(!grepl("\\s", item_oth) | (grepl("\\s", item_oth) & !item_code %in% other_foods), 
+           as.character(item_code),
+        case_when(
+# item_oth %in% c('GRAIN MEAL', 'GRANMILL', 'MAIZEMEAL') ~ 101,
+item_oth=='SCONES' ~ "112", 
+# item_oth %in% c('FRESHBEANS', 'GROUND AND COOKED BEANS') ~ 302,
+item_oth %in% c( 'GROUND AND COOKED BEANS') ~ "310", 
+item_oth=='PIGEON PEAS'~ "303", 
+item_oth=='PEANUT' ~ "304",   
+item_oth=='COW PEAS'~ "308", 
+item_oth=='SOYA' ~ "314", 
+item_oth %in% c('BONONGWE', 'CHISOSOANDBONONGWE') ~  "403", 
+item_oth=='CASSAVA LEAVES' ~ "406", 
+item_oth=='CUCUMBER' ~ "409",  
+item_oth=='PORK'~ "506",
+item_oth %in% c('BIRD', 'DUCKMEAT') ~ "509",
+item_oth=='IRISH POTATOES AND FLOUR' ~ "821",
+item_oth %in% c('MANDASI', 'FRIED MIXTURE OF MAIZE FLOUR/BANANA AND SODA', 'MIXTURE OF MAIZE FLOUR/BANANA/SUGAR') ~ "827", 
+item_oth %in% c('BAKED AFRICAN CAKE', 'CHIKONDAMOYO') ~ "836", 
+item_oth=='SMALL FISH' ~ "5023", 
+item_oth=='TEA' ~ "901", 
+item_oth=='SODA' ~  "907", 
+item_oth=='WINE' ~ "914"))) 
 
 ```
 
@@ -306,10 +324,10 @@ ihs4$item_code[ihs4$item_oth=='SOYA'] <- 314
 
 Create unique ID variable
 ```{r}
-ihs4$measure_id <- paste0(as.character(ihs4$item_code),"_", as.character(ihs4$cons_unitA))
+ihs4$measure_id <- paste0(as.character(ihs4$item_code_st),"_", as.character(ihs4$cons_unitA))
 ihs4$measure_id[is.na(ihs4$cons_unit)] <- NA
 
-ihs4 %>%  dplyr::count(item_code, item, item_oth) %>% arrange(item_code)
+ihs4 %>%  dplyr::count(item_code_st, item) %>% arrange(item_code_st)
 
 write.csv(ihs4, here::here("data","inter-output", "hh_mod_g_clean.csv"))
 
