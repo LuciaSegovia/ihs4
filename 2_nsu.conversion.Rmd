@@ -89,6 +89,7 @@ ihs4 <- ihs4 %>% select(-ihs4factor_n, -ihs4factor_c, -ihs4factor_s)
 
 4. Calculate the quantity of each food item consumed in Kg
   (Quantity of the food item consumed in the NSU) X (NSU factor)
+  
 ```{r}
 ihs4$cons_kg <- ihs4$cons_quant * ihs4$factor
 ```

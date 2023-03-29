@@ -31,6 +31,8 @@ Assumptions under units reported as "others" (prod_unitA==23):
 
 Further info is needed for:
 
+
+
 - The unit under "heap" have two type of small to large. It should be further checked!
 
 Units not found in the master NSU file (nsu.factor):
@@ -44,7 +46,15 @@ Units not found in the master NSU file (nsu.factor):
 
 Finally, what we have done is that we have used the "consumed items" cleaned and assigned the same quantity as the code/quantities were the same. 
 
-We checked the maize and products consumed by region, and we can see that maize cooked (boiled or roasted) was not reported as "own production". 
 
 We also identify some items wrongly code, so the item_code should be 102 instead of 101. We are amending it in the "1_ihs4_cleaning.Rmd"
+
+We haven't been able to find the code for NSU for own production, such as c("29", "38", "39", "28", "40", "30").
+
+We have calculate the mean consumption (kg/d) by region for own production and total consumption. Some interesting results, like overall mean consumption and own production of maize and maize products is very similar with the exception of maize cooked (boiled or roasted) which was not reported as "own production". 
+
+Additionally, the mean total consumption is lower than the mean of own production for refined flour for all three regions and remarkably high for "ufa madeya" in the northen region. Similarly higher consumption from own production is shown for green maize with higher contribution in the southern region. 
+
+These results are preliminary as no weights were applied. 
+
 
