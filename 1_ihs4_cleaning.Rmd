@@ -20,6 +20,7 @@ Hence, we need to load the file hh_mod_g1 (household questionnaire module G, 1- 
 
 ```{r}
 #--- Load libraries - reminder to always load tidyverse last
+
 library(epiDisplay)
 library(plyr)
 library(magrittr)
@@ -135,6 +136,7 @@ ihs4$gift_unitA <- as.factor(ihs4$gift_unitA)
 ihs4$gift_unit <- as.factor(ihs4$gift_unit)
 ihs4$gift_unit_oth <- as.factor(ihs4$gift_unit_oth)
 ihs4$gift_unit_size <- as.factor(ihs4$gift_unit_size)
+
 ```
 
 ## MERGE IN UNIT AND ITEM LABELS
@@ -146,7 +148,8 @@ ihs4 <- merge(x=ihs4, y=fcode, by.x='item_code', by.y='code', fill=-9999, all.x 
 ihs4 <- merge(x=ihs4, y=ucode, by.x='cons_unit', by.y='code', fill=-9999, all.x = TRUE)
 
 ihs4 <- ihs4 %>% arrange(cons_unit) %>% arrange(item_code) %>% arrange(HHID)
-ihs4 <- ihs4 %>% select(id:consYN, item_code, item, item_oth:cons_unitA, cons_unit, unit, cons_unit_oth:gift_unit_size)
+
+ihs4 <- ihs4 %>% dplyr::select(id:consYN, item_code, item, item_oth:cons_unitA, cons_unit, unit, cons_unit_oth:gift_unit_size)
 
 ihs4 %>%  dplyr::count(item_code, item) %>% arrange(item_code)
 
@@ -155,69 +158,76 @@ ihs4 %>%  filter(item_code == "102") %>% distinct(item_code, item)
 ```
 
 
->CLEANING UNITS LABELLED AS "OTHER"
+# CLEANING UNITS LABELLED AS "OTHER"
 
-Food items and units are coming from a standard list. However, some food consumed by the household is not in that list of items, hence it can be recorded under 'other'. The code to identify 'other food items is
+Food items and units are coming from a standard list. However, for some NSU, when the household is reporting the food consumed in a unit that it is not in the list will be recoded and the unit code apply for 'other' is 23.
 
-Similarly, for units, when the household is reporting the food consumed in a unit that it is not in the list will be recoded and the unit code apply for 'other' is 23.
 
-There are a number of item units recorded as "23" but described as existing ucodes in our codebook.
-We need to change these units from "23" to their appropriate units as in this analysis any item without a standard unit will be excluded. 
 ```{r}
 ihs4 %>% filter(cons_unitA==23)
 ihs4 %>% filter(cons_unit_oth != "") %>% dplyr::count(cons_unit_oth) %>% arrange(desc(n)) #which units are listed as "other"
 ihs4 %>% filter(cons_unitA==23) %>% dplyr::count(cons_unit_oth) %>% arrange(desc(n)) #which units are listed as "other" have not been converted to standard unit
 
 ihs4 %>% filter(., cons_unit_oth=="HEAP") %>% select(item, item_code, cons_quant, cons_unitA, cons_unit, cons_unit_oth) %>% arrange(item)
-ihs4 %>% filter(item_code=="803") %>% select(item, item_code, cons_quant, cons_unitA, cons_unit, cons_unit_oth) %>% arrange(desc(cons_unitA))
+ihs4 %>% filter(item_code=="803") %>% dplyr::select(item, item_code, cons_quant, cons_unitA, cons_unit, cons_unit_oth) %>% arrange(desc(cons_unitA))
+
+# Generating the new variable
+
+ihs4$unit_code_st <- ihs4$cons_unitA
 
 ```
 
+
+There are a number of item units recorded as "23" but described as existing ucodes in our codebook.
+
+We need to change these units from "23" to their appropriate units as in this analysis any item without a standard unit will be excluded. The NSU codes for use (original + amended) are stored in the variabe `code_unit_st`.
+
+
 ```{r}
-ihs4[ihs4$cons_unit_oth == "HEAP", "cons_unitA"] <- 10
-ihs4[ihs4$cons_unit_oth == "GRAMS", "cons_unitA"] <- 18
-ihs4[ihs4$cons_unit_oth == "KILOGRAM", "cons_unitA"] <- 1
-ihs4[ihs4$cons_unit_oth == "PAIL", "cons_unitA"] <- 4
-ihs4[ihs4$cons_unit_oth == "TUBE /SACHET", "cons_unitA"] <- 22
-ihs4[ihs4$cons_unit_oth == "SATCHET (MEDIUM)", "cons_unitA"] <- 42
-ihs4[ihs4$cons_unit_oth == "HEAP (SMALL)", "cons_unitA"] <- 10
-ihs4[ihs4$cons_unit_oth == "BUNDLE", "cons_unitA"] <- 8
-ihs4[ihs4$cons_unit_oth == "HEAP (LARGE)", "cons_unitA"] <- "10C"
-ihs4[ihs4$cons_unit_oth == "TABLESPOON", "cons_unitA"] <- 50
-ihs4[ihs4$cons_unit_oth == "5L BUCKET", "cons_unitA"] <- 26
-ihs4[ihs4$cons_unit_oth == "TUBE (MEDIUM)", "cons_unitA"] <- 42
-ihs4[ihs4$cons_unit_oth == "PAIL (SMALL)", "cons_unitA"] <- 4
-ihs4[ihs4$cons_unit_oth == "TEASPOON", "cons_unitA"] <- 20
-ihs4[ihs4$cons_unit_oth == "HEAP (MEDIUM)", "cons_unitA"] <- 10
-ihs4[ihs4$cons_unit_oth == "PACKET 100 GRAM", "cons_unitA"] <- 34
-ihs4[ihs4$cons_unit_oth == "PAIL (LARGE)", "cons_unitA"] <- 4
-ihs4[ihs4$cons_unit_oth == "TUBE (LARGE)", "cons_unitA"] <- 43
-ihs4[ihs4$cons_unit_oth == "PACKET 150 GRAM", "cons_unitA"] <- 34
-ihs4[ihs4$cons_unit_oth == "PIECE (SMALL)", "cons_unitA"] <- "9A"
-ihs4[ihs4$cons_unit_oth == "PIECES", "cons_unitA"] <- 9
-ihs4[ihs4$cons_unit_oth == "NO. 12 PLATE", "cons_unitA"] <- 7
-ihs4[ihs4$cons_unit_oth == "SATCHET (LARGE)", "cons_unitA"] <- 43
-ihs4[ihs4$cons_unit_oth == "PIECE MEDIUM", "cons_unitA"] <- "9B"
-ihs4[ihs4$cons_unit_oth == "PIECE", "cons_unitA"] <- 9
-ihs4[ihs4$cons_unit_oth == "NO. 10 PLATE", "cons_unitA"] <- 6
-ihs4[ihs4$cons_unit_oth == "5 LITRES", "cons_unitA"] <- 26
-ihs4[ihs4$cons_unit_oth == "PAIL (MEDIUM)", "cons_unitA"] <- "4B"
-ihs4[ihs4$cons_unit_oth == "PIECE (LARGE)", "cons_unitA"] <- "9C"
-ihs4[ihs4$cons_unit_oth == "MANGO", "cons_unitA"] <- 9
-ihs4[ihs4$cons_unit_oth == "PACKET (SMALL)", "cons_unitA"] <- 54
-ihs4[ihs4$cons_unit_oth == "SATCHET (250 GRAM)", "cons_unitA"] <- 65
-ihs4[ihs4$cons_unit_oth == "SATCHET (20 GRAM)", "cons_unitA"] <- 41
-ihs4[ihs4$cons_unit_oth == "TIN", "cons_unitA"] <- 72
-ihs4[ihs4$cons_unit_oth == "PIECE (MEDIUM)", "cons_unitA"] <- "9B"
-ihs4[ihs4$cons_unit_oth == "PACKET 250 GRAM", "cons_unitA"] <- 65
-ihs4[ihs4$cons_unit_oth == "PACKETS", "cons_unitA"] <- 60
-ihs4[ihs4$cons_unit_oth == "TIN (500G)", "cons_unitA"] <- 73
-ihs4[ihs4$cons_unit_oth == "SACHET", "cons_unitA"] <- 22
-ihs4[ihs4$cons_unit_oth == "SATCHET (MEDIUM)", "cons_unitA"] <- 22
-ihs4[ihs4$cons_unit_oth == "SATCHET (500 GRAM)", "cons_unitA"] <- 22
-ihs4[ihs4$cons_unit_oth == "SATCHET (SMALL)", "cons_unitA"] <- 22
-ihs4[ihs4$cons_unit_oth == "SATCHET (150 GRAM)", "cons_unitA"] <- 43
-ihs4[ihs4$cons_unit_oth == "BOTTLE" & ihs4$item_code == "803", "cons_unitA"] <- 15
+ihs4[ihs4$cons_unit_oth == "HEAP", "unit_code_st"] <- 10
+ihs4[ihs4$cons_unit_oth == "GRAMS", "unit_code_st"] <- 18
+ihs4[ihs4$cons_unit_oth == "KILOGRAM", "unit_code_st"] <- 1
+ihs4[ihs4$cons_unit_oth == "PAIL", "unit_code_st"] <- 4
+ihs4[ihs4$cons_unit_oth == "TUBE /SACHET", "unit_code_st"] <- 22
+ihs4[ihs4$cons_unit_oth == "SATCHET (MEDIUM)", "unit_code_st"] <- 42
+ihs4[ihs4$cons_unit_oth == "HEAP (SMALL)", "unit_code_st"] <- 10
+ihs4[ihs4$cons_unit_oth == "BUNDLE", "unit_code_st"] <- 8
+ihs4[ihs4$cons_unit_oth == "HEAP (LARGE)", "unit_code_st"] <- "10C"
+ihs4[ihs4$cons_unit_oth == "TABLESPOON", "unit_code_st"] <- 50
+ihs4[ihs4$cons_unit_oth == "5L BUCKET", "unit_code_st"] <- 26
+ihs4[ihs4$cons_unit_oth == "TUBE (MEDIUM)", "unit_code_st"] <- 42
+ihs4[ihs4$cons_unit_oth == "PAIL (SMALL)", "unit_code_st"] <- 4
+ihs4[ihs4$cons_unit_oth == "TEASPOON", "unit_code_st"] <- 20
+ihs4[ihs4$cons_unit_oth == "HEAP (MEDIUM)", "unit_code_st"] <- 10
+ihs4[ihs4$cons_unit_oth == "PACKET 100 GRAM", "unit_code_st"] <- 34
+ihs4[ihs4$cons_unit_oth == "PAIL (LARGE)", "unit_code_st"] <- 4
+ihs4[ihs4$cons_unit_oth == "TUBE (LARGE)", "unit_code_st"] <- 43
+ihs4[ihs4$cons_unit_oth == "PACKET 150 GRAM", "unit_code_st"] <- 34
+ihs4[ihs4$cons_unit_oth == "PIECE (SMALL)", "unit_code_st"] <- "9A"
+ihs4[ihs4$cons_unit_oth == "PIECES", "unit_code_st"] <- 9
+ihs4[ihs4$cons_unit_oth == "NO. 12 PLATE", "unit_code_st"] <- 7
+ihs4[ihs4$cons_unit_oth == "SATCHET (LARGE)", "unit_code_st"] <- 43
+ihs4[ihs4$cons_unit_oth == "PIECE MEDIUM", "unit_code_st"] <- "9B"
+ihs4[ihs4$cons_unit_oth == "PIECE", "unit_code_st"] <- 9
+ihs4[ihs4$cons_unit_oth == "NO. 10 PLATE", "unit_code_st"] <- 6
+ihs4[ihs4$cons_unit_oth == "5 LITRES", "unit_code_st"] <- 26
+ihs4[ihs4$cons_unit_oth == "PAIL (MEDIUM)", "unit_code_st"] <- "4B"
+ihs4[ihs4$cons_unit_oth == "PIECE (LARGE)", "unit_code_st"] <- "9C"
+ihs4[ihs4$cons_unit_oth == "MANGO", "unit_code_st"] <- 9
+ihs4[ihs4$cons_unit_oth == "PACKET (SMALL)", "unit_code_st"] <- 54
+ihs4[ihs4$cons_unit_oth == "SATCHET (250 GRAM)", "unit_code_st"] <- 65
+ihs4[ihs4$cons_unit_oth == "SATCHET (20 GRAM)", "unit_code_st"] <- 41
+ihs4[ihs4$cons_unit_oth == "TIN", "unit_code_st"] <- 72
+ihs4[ihs4$cons_unit_oth == "PIECE (MEDIUM)", "unit_code_st"] <- "9B"
+ihs4[ihs4$cons_unit_oth == "PACKET 250 GRAM", "unit_code_st"] <- 65
+ihs4[ihs4$cons_unit_oth == "PACKETS", "unit_code_st"] <- 60
+ihs4[ihs4$cons_unit_oth == "TIN (500G)", "unit_code_st"] <- 73
+ihs4[ihs4$cons_unit_oth == "SACHET", "unit_code_st"] <- 22
+ihs4[ihs4$cons_unit_oth == "SATCHET (MEDIUM)", "unit_code_st"] <- 22
+ihs4[ihs4$cons_unit_oth == "SATCHET (500 GRAM)", "unit_code_st"] <- 22
+ihs4[ihs4$cons_unit_oth == "SATCHET (SMALL)", "unit_code_st"] <- 22
+ihs4[ihs4$cons_unit_oth == "SATCHET (150 GRAM)", "unit_code_st"] <- 43
+ihs4[ihs4$cons_unit_oth == "BOTTLE" & ihs4$item_code == "803", "unit_code_st"] <- 15
 
 ihs4[ihs4$cons_unit_oth == "HEAP", "cons_unit"] <- 10
 ihs4[ihs4$cons_unit_oth == "GRAMS", "cons_unit"] <- 18
@@ -266,6 +276,14 @@ ihs4[ihs4$cons_unit_oth == "BOTTLE" & ihs4$item_code == "803", "cons_unit"] <- 1
 ```
 
 # CLEANING FOODS LABELLED AS "OTHER"
+
+```{r, echo=FALSE}
+
+other_foods <- fcode %>% filter(grepl("other|Specify", item, ignore.case = TRUE)) %>% pull(code)
+
+```
+
+Similarly, some food consumed by the household are not in that list of items, hence it can be recorded under 'other'. The codes to identify "other food items" depend on the food category and we have identified as the following `r toString(other_foods)`
 
 Changing the way the food other are allocated to avoid overwriting items that were assigned to fixed codes. For example, there is one food that has item_oth == 'GRAIN MEAL', howeve it is also coded under "Maize ufa refined (fine flour)" (102), if we run the code without filtering out those items that were already allocated to a category, then we are changing the food code from code 102 to 101, which may have some impact in the nutrient quantities due to the content of the different flours. 
 
@@ -324,7 +342,7 @@ item_oth=='WINE' ~ "914")))
 
 Create unique ID variable
 ```{r}
-ihs4$measure_id <- paste0(as.character(ihs4$item_code_st),"_", as.character(ihs4$cons_unitA))
+ihs4$measure_id <- paste0(as.character(ihs4$item_code_st),"_", as.character(ihs4$unit_code_st))
 ihs4$measure_id[is.na(ihs4$cons_unit)] <- NA
 
 ihs4 %>%  dplyr::count(item_code_st, item) %>% arrange(item_code_st)

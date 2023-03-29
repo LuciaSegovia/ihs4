@@ -5,9 +5,17 @@ editor: source
 ---
 
 
-## Food items & dealing with others:
+## Food items & dealing with others
 
-'FRESHBEANS', 'GROUND AND COOKED BEANS' was allocated to item (302 - beans brown), although it may be better to keep them as "Other(nuts/pulses)", 
+### Data processing - changes:
+
+1. We made some changes on the units (NSU) and the foods reported under "other"/ "specify". The updated consisted in making those changes in a new variable in other to keep the origina variable as it was. This is good for further/ future analysis and/or reference during the cleaning/analysis steps. 
+
+For the units the new variable which contains the amended codes is called `unit_code_st` while for the variable that contains the amendment codes is called `item_code_st`.
+
+2. Food items labelled as "others". 
+
+'FRESHBEANS', 'GROUND AND COOKED BEANS' was allocated to item (302 - beans brown), although it may be better to keep them as "Other(nuts/pulses)". Some foods in the category others could be kept and as they are. 
 
 ## Non-standard units for own production
 
