@@ -51,10 +51,20 @@ We also identify some items wrongly code, so the item_code should be 102 instead
 
 We haven't been able to find the code for NSU for own production, such as c("29", "38", "39", "28", "40", "30").
 
+After all the steps 19 items were left without a conversion from NSU to NS. None of which were maize and maize products. 
+
 We have calculate the mean consumption (kg/d) by region for own production and total consumption. Some interesting results, like overall mean consumption and own production of maize and maize products is very similar with the exception of maize cooked (boiled or roasted) which was not reported as "own production". 
 
-Additionally, the mean total consumption is lower than the mean of own production for refined flour for all three regions and remarkably high for "ufa madeya" in the northen region. Similarly higher consumption from own production is shown for green maize with higher contribution in the southern region. 
+Additionally, the mean consumption of maize refined flour is marginally lower than the mean of own production for all three regions and remarkably high for "ufa madeya" in the northern region. Similarly higher consumption from own production is shown for green maize with higher contribution in the southern region. 
 
-These results are preliminary as no weights were applied. 
+These results are preliminary as no weights were applied, also the results are not representative as it compares those reporting own production with all cases (all reporting consumption). 
+
+We have instead calculated the percentage of own production from all consumed, and some interesting result are showing with differences by food item, region and residency. 
+
+The next step should include weights, and check by different months and district/ EAs. 
+
+Additionally, spatial pattern may arise, so it may be interesting to apply the same model or to create a variogram to see if there is any spatial dependency. It may be worth to adjust/ account for differences in HH size. 
+
+
 
 

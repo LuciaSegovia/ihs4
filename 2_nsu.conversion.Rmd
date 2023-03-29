@@ -62,19 +62,26 @@ Definitely not a glamorous part of the analysis and I assume this is the part th
 
 > Create  data frame
 
-1. Label households by region
-  Food consumption data and geographic region data are located in different parts of the survey. Bring the two pieces of information together and merge.
+1. Label households by region 
+
+  Food consumption data and geographic region data are located in different parts of the survey. Bring the two pieces of information together and merge. We are adding all the geographic location plus the survey weights by merging the two datasets together (not only region)
 
 ```{r}
-region <- hh_id %>% select(case_id, region)
-ihs4 <- merge(x=ihs4, y=region , by.x='id', by.y='case_id', fill=-9999, all.x = TRUE) %>% arrange(item_code) %>% arrange(HHID)
+#region <- hh_id %>% select(case_id, region)
+#ihs4 <- merge(x=ihs4, y=hh_id , by.x='id', by.y='case_id', fill=-9999, #all.x = TRUE) %>% arrange(item_code) %>% arrange(HHID)
+
+ihs4 <- ihs4 %>%left_join(., hh_id)
+
+names(ihs4)
+
 ```
 
 2. Merge food-unit specific NSU factor 
   Merge in the NSU factors according by food item based on what NSU unit each household reported consuming that food item by. Maintain the variation in unit volumes/mass by region.
 
 ```{r}
-ihs4 <- merge(x=ihs4, y=nsu.factors , by.x='measure_id', by.y='measure_id', fill=-9999, all.x = TRUE) %>% arrange(item_code) %>% arrange(id)
+ihs4 <- merge(x=ihs4, y=nsu.factors , by.x='measure_id', by.y='measure_id', fill=-9999, all.x = TRUE) %>% arrange(item_code) %>% arrange(case_id)
+
 ```
 
 3. Create a variable selecting the appropriate NSU factor based on the HH reported region
@@ -83,8 +90,11 @@ ihs4 <- merge(x=ihs4, y=nsu.factors , by.x='measure_id', by.y='measure_id', fill
 ihs4$ihs4factor_n <- ifelse(ihs4$region == 1, ihs4$ihs4factor_n, NA)
 ihs4$ihs4factor_c <- ifelse(ihs4$region == 2, ihs4$ihs4factor_c, NA)
 ihs4$ihs4factor_s <- ifelse(ihs4$region == 3, ihs4$ihs4factor_s, NA)
+
 ihs4$factor <- rowSums(ihs4[,c("ihs4factor_n", "ihs4factor_c", "ihs4factor_s")], na.rm=TRUE)
-ihs4 <- ihs4 %>% select(-ihs4factor_n, -ihs4factor_c, -ihs4factor_s)
+
+ihs4 <- ihs4 %>% dplyr::select(-ihs4factor_n, -ihs4factor_c, -ihs4factor_s)
+
 ```
 
 4. Calculate the quantity of each food item consumed in Kg
@@ -103,6 +113,7 @@ ihs4$kg_d <- ihs4$cons_kg/7
 > DONE: archive
 
 ```{r}
-write.csv(ihs4, here::here("data", "inter-output" , "hh_mod_g_processed.csv"))
+write.csv(ihs4, here::here("data", "inter-output" , "hh_mod_g_processed.csv"), row.names = FALSE)
+
 ```
 

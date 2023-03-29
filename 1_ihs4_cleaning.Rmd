@@ -72,12 +72,12 @@ cons_unit_size= hh_g03c              prod_unit_size= hh_g06c
 ```{r}
 
 #Summary info
-names(ihs4)[names(ihs4) == 'case_id'] <- 'id'
+#names(ihs4)[names(ihs4) == 'case_id'] <- 'id'
 names(ihs4)[names(ihs4) == 'hh_g01'] <- 'consYN'
 names(ihs4)[names(ihs4) == 'hh_g02'] <- 'item_code'
 names(ihs4)[names(ihs4) == 'hh_g01_oth'] <- 'item_oth'
 
-ihs4$id <- as.character(ihs4$id)
+ihs4$case_id <- as.character(ihs4$case_id)
 ihs4$consYN <- as.factor(ihs4$consYN)
 ihs4$item_code <- as.factor(ihs4$item_code)
 ihs4$item_oth <- as.factor(ihs4$item_oth)
@@ -149,7 +149,7 @@ ihs4 <- merge(x=ihs4, y=ucode, by.x='cons_unit', by.y='code', fill=-9999, all.x 
 
 ihs4 <- ihs4 %>% arrange(cons_unit) %>% arrange(item_code) %>% arrange(HHID)
 
-ihs4 <- ihs4 %>% dplyr::select(id:consYN, item_code, item, item_oth:cons_unitA, cons_unit, unit, cons_unit_oth:gift_unit_size)
+ihs4 <- ihs4 %>% dplyr::select(case_id:consYN, item_code, item, item_oth:cons_unitA, cons_unit, unit, cons_unit_oth:gift_unit_size)
 
 ihs4 %>%  dplyr::count(item_code, item) %>% arrange(item_code)
 
@@ -168,7 +168,7 @@ ihs4 %>% filter(cons_unitA==23)
 ihs4 %>% filter(cons_unit_oth != "") %>% dplyr::count(cons_unit_oth) %>% arrange(desc(n)) #which units are listed as "other"
 ihs4 %>% filter(cons_unitA==23) %>% dplyr::count(cons_unit_oth) %>% arrange(desc(n)) #which units are listed as "other" have not been converted to standard unit
 
-ihs4 %>% filter(., cons_unit_oth=="HEAP") %>% select(item, item_code, cons_quant, cons_unitA, cons_unit, cons_unit_oth) %>% arrange(item)
+ihs4 %>% filter(., cons_unit_oth=="HEAP") %>% dplyr::select(item, item_code, cons_quant, cons_unitA, cons_unit, cons_unit_oth) %>% arrange(item)
 ihs4 %>% filter(item_code=="803") %>% dplyr::select(item, item_code, cons_quant, cons_unitA, cons_unit, cons_unit_oth) %>% arrange(desc(cons_unitA))
 
 # Generating the new variable
@@ -347,7 +347,7 @@ ihs4$measure_id[is.na(ihs4$cons_unit)] <- NA
 
 ihs4 %>%  dplyr::count(item_code_st, item) %>% arrange(item_code_st)
 
-write.csv(ihs4, here::here("data","inter-output", "hh_mod_g_clean.csv"))
+write.csv(ihs4, here::here("data","inter-output", "hh_mod_g_clean.csv"), row.names = FALSE)
 
 ```
 
