@@ -23,6 +23,8 @@ options(digits=2)
 
 To run this script we need the foods consumed cleaned, to get the file "hh_mod_g_clean.csv", run the script "1_ish4_cleaning.Rmd". 
 
+This script convert food consumed from Non-Standard Units (NSU) to Standard Unit (Kg). 
+
 
 ```{r}
 
@@ -45,7 +47,7 @@ names(hh_id)
 ```
 
 
->Convert Non-Standard Units to KGs
+## Convert Non-Standard Units to KGs
 
 Objective: to convert all food consumption quantities reported in NSU into KGs consumed of each food item. 
 
@@ -60,7 +62,7 @@ Data on the NSU factors were compiled into a data file with each NSU factor labe
 Definitely not a glamorous part of the analysis and I assume this is the part that deters a lot of people from using HCES in the first place since it is tedious, time-consuming and very uninteresting.  
 
 
-> Create  data frame
+### Create  data frame
 
 1. Label households by region 
 
@@ -101,7 +103,9 @@ ihs4 <- ihs4 %>% dplyr::select(-ihs4factor_n, -ihs4factor_c, -ihs4factor_s)
   (Quantity of the food item consumed in the NSU) X (NSU factor)
   
 ```{r}
+
 ihs4$cons_kg <- ihs4$cons_quant * ihs4$factor
+
 ```
 
 5. Convert to quantity consumed per day

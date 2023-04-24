@@ -19,9 +19,9 @@ library(tidyverse)
 >Data 
 
 ```{r}
-ihs4.roster <- read.csv("/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_b.csv")
+ihs4.roster <- read.csv(here::here("data", "hh_mod_b.csv"))
 
-ihs4_health <-read.csv("/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_d.csv")
+ihs4_health <-read.csv(here::here("data", "hh_mod_d.csv"))
 
 ame <- read.csv("/Users/kevintang/Documents/ihs4/data/ame/ame.factors.csv")
 

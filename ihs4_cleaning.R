@@ -1,6 +1,7 @@
 
-# Loading dataset -----
+# Loading libraries -----
 
+library(srvyr)
 library(tidyverse)
 
 # Read in the file------
@@ -133,3 +134,20 @@ ihs4 %>% filter(grepl("fish", item, ignore.case = TRUE)) %>%
   filter(prod_kg_d <20) %>% 
   ggplot(aes(as.factor(item), prod_kg_d)) + 
   geom_boxplot(aes(colour = as.factor(region)))
+
+
+# Survey design
+
+ihs4_survey <-  ihs4 %>%
+  srvyr::as_survey_design(id = ea_id, strata = reside, weights = hh_wgt)
+
+
+
+ihs4_survey %>% 
+  #filter(grepl("maize|fish", item, ignore.case = TRUE)) %>% 
+group_by(across(variables)) %>%
+  summarise(prod_mean = survey_mean(kg_d, na.rm = TRUE, vartype = "ci"), 
+            cons_mean = survey_mean(kg_d, na.rm = TRUE, vartype = "ci")) %>% 
+mutate(prod_perc = prod_mean/cons_mean*100) %>%
+  arrange(desc(cons_sum)) 
+            
