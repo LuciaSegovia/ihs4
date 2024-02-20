@@ -10,25 +10,29 @@ editor_options:
 > Packages
 
 ```{r}
-library(epiDisplay)
+#library(epiDisplay)
 library(foreign)
-library(psych)
+#library(psych)
 library(tidyverse)
 ```
 
 >Data 
 
 ```{r}
+
 ihs4.roster <- read.csv(here::here("data", "hh_mod_b.csv"))
 
 ihs4_health <-read.csv(here::here("data", "hh_mod_d.csv"))
 
-ame <- read.csv("/Users/kevintang/Documents/ihs4/data/ame/ame.factors.csv")
+ame <- read.csv(here::here("data", "ame.factors.csv"))
 
-ame.spec <- read.csv("/Users/kevintang/Documents/ihs4/data/ame/ame.spec.csv")
-  ame.spec <- ame.spec %>% select(cat, ame.spec, afe.spec)
+ame.spec <- read.csv(here::here("data", "ame.spec.csv"))
+names(ame.spec)
+
+ame.spec <- ame.spec %>% select(cat, ame.spec, afe.spec)
   
-dhs15 <- read.dta("/Users/kevintang/Documents/ihs4/data/dhs/MWPR7AFL.DTA")
+#dhs15 <- read.dta("/Users/kevintang/Documents/ihs4/data/dhs/MWPR7AFL.DTA")
+
 ```
 
 
@@ -47,7 +51,9 @@ ihs4.roster.c <- ihs4.roster %>% select(case_id, HHID, sex, age_y, age_m)
 
 ihs4.roster.c$age_y <- as.numeric(ihs4.roster.c$age_y)
 ihs4.roster.c$age_m <- as.numeric(ihs4.roster.c$age_m)
-ihs4.roster.c <- ihs4.roster.c %>% mutate(age.m.total = (age_y*12 + age_m))
+ihs4.roster.c <- ihs4.roster.c %>% mutate(age.m.total = ifelse(is.na(age_y), age_m, 
+                                              ifelse(is.na(age_m),  age_y*12, 
+                                            age_y*12 + age_m)))
 ihs4.roster.c <- ihs4.roster.c %>% mutate(age.u2 = case_when(age_y < 2 ~ "TRUE"))
 #Per capita variable
 ihs4.roster.c <- ihs4.roster.c %>% mutate(pc = 1)
@@ -107,7 +113,7 @@ ihs4.roster.c <- ihs4.roster.c %>% mutate(age.u1.cat = case_when(age.m.total  < 
                                           age.m.total  >= 6 & age.m.total  < 9 ~ "6-8 months",
                                           age.m.total  >= 9 & age.m.total  < 12 ~ "9-11 months"))
 
-ihs4.roster.c <- merge(x=ihs4.roster.c , y=ame.spec , by.x='age.u1.cat', by.y='cat', fill=-9999, all.x = TRUE) %>% arrange(case_id)
+ihs4.roster.c <- merge(x=ihs4.roster.c , y=ame.spec , by.x='age.u1.cat', by.y='population', fill=-9999, all.x = TRUE) %>% arrange(case_id)
 ```
 
 > Extra energy required for lactation
@@ -130,8 +136,8 @@ ihs4.roster.c <- ihs4.roster.c %>% mutate(afe = afe.base + afe.spec + afe.lac)
 
 hh.ame <- aggregate(ihs4.roster.c$ame, by=list(HHID=ihs4.roster.c$HHID), FUN=sum)
 hh.afe <- aggregate(ihs4.roster.c$afe, by=list(HHID=ihs4.roster.c$HHID), FUN=sum)
-names(hh.ame)[names(hh.ame) == 'sum.ihs4.roster.c$ame'] <- 'ame.x'
-names(hh.afe)[names(hh.afe) == 'sum.ihs4.roster.c$afe'] <- 'afe.x'
+names(hh.ame)[names(hh.ame) == 'x'] <- 'ame.x'
+names(hh.afe)[names(hh.afe) == 'x'] <- 'afe.x'
 hme <- merge(x=hh.ame , y=hh.afe  , by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
 ```
 
@@ -151,7 +157,8 @@ ihs4.preg$ame.preg <- 0.11
 ihs4.preg$afe.preg <- 0.14
 ihs4.preg <- ihs4.preg %>% select(HHID, ame.preg, afe.preg)
 
-hme <- merge(x=hme , y=ihs4.preg , by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE) 
+#hme <- merge(x=hme , y=ihs4.preg , by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE) 
+hme <- left_join(hme , ihs4.preg ) 
 hme$ame.preg[is.na(hme$ame.preg)] <- 0
 hme$afe.preg[is.na(hme$afe.preg)] <- 0
 
@@ -170,5 +177,7 @@ hme <- merge(x=hme , y=hh.pc , by.x='HHID', by.y='HHID', fill=-9999, all.x = TRU
 > DONE: archive
 
 ```{r}
-write.csv(hme, "/Users/kevintang/Documents/ihs4/data/ame/hme.final.csv")
+
+write.csv(hme, here::here("data", "inter-output", "ihs4.afe_v1.0.0.csv"), row.names = FALSE)
+
 ```
