@@ -139,6 +139,7 @@ hh.afe <- aggregate(ihs4.roster.c$afe, by=list(HHID=ihs4.roster.c$HHID), FUN=sum
 names(hh.ame)[names(hh.ame) == 'x'] <- 'ame.x'
 names(hh.afe)[names(hh.afe) == 'x'] <- 'afe.x'
 hme <- merge(x=hh.ame , y=hh.afe  , by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+
 ```
 
 
@@ -171,7 +172,7 @@ hme$afe <- hme$afe.x + hme$afe.preg
 
 ```{r}
 hme <- hme %>% select(HHID, ame, afe)
-hme <- merge(x=hme , y=hh.pc , by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+# hme <- merge(x=hme , y=hh.pc , by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
 ```
 
 > DONE: archive

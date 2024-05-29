@@ -5,7 +5,6 @@ date: "11/11/2020"
 output: html_document
 ---
 
-> Packages
 
 ```{r}
 
@@ -18,15 +17,17 @@ options(digits=2)
 
 ```
 
->Data
+
 
 ```{r}
-ihs4 <- read.csv("/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_g_processed.csv")
 
-hh.hme <- read.csv("/Users/kevintang/Documents/ihs4/data/ame/hme.final.csv")
+ihs4 <- read.csv(here::here("data", "inter-output", "hh_mod_g_processed.csv"))
+
+hh.hme <- read.csv(here::here("data", "inter-output", "ihs4.afe_v1.0.0.csv"))
+
 ```
 
->Manage outliers: eliminate by excess food item intake
+# Manage outliers: eliminate by excess food item intake
 
 Some individual food items may be overestimated due to stockpiling or purchases in bulk. Generally not a problem for surveys which have shorter recall periods but it doesn't hurt to check to see if there any outlandish overestimates of particular food items. In this chunk, I divided the kgs of each food items consumed by the number of people per household and the total number of days in the recall to get the total kgs consumed per capita per day. I know per capita is not the best way to divide out consumption data, but I don't think it will make up that big of a difference for this exercise and I need to push on with this part of the analysis. 
 
@@ -45,7 +46,10 @@ ihs4 <- merge(x=ihs4, y=hh.hme, by.x='HHID', by.y='HHID', fill=-9999, all.x = TR
 ihs4$kg_ame_d <- ihs4$kg_d/ihs4$ame
 ```
 
+
+
 ```{r}
+
 #Consumption (kg/ame/day) (114= spaghetti, 101= maize flour, 311=groundnuts, 408= tomatos)
 ihs4 %>% filter(item_code==114) %>% ggplot(., aes(x=kg_ame_d)) + 
   geom_histogram() +

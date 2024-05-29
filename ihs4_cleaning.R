@@ -9,7 +9,8 @@ options(scipen=999)
 # Read in the file------
 
 
-ihs4 <- read.csv(here::here("data", "inter-output", "hh_mod_g_processed.csv"))
+ihs4 <- read.csv(here::here("data", "inter-output", "hh_mod_g_processed.csv")) %>% 
+  dplyr::filter(consYN == 1)
 nsu.df <- read.csv(here::here('data', "factors", 'nsu.factors.csv'), fileEncoding="UTF-8-BOM")
 geo <- read.csv(here::here('data', 'HouseholdGeovariablesIHS4.csv'))
 
@@ -18,28 +19,39 @@ names(geo)
 ## Prepare NSU file ----
 
 nsu.df <- nsu.df %>% 
+  # Converting three region columns into one column
   pivot_longer(., 
                cols = starts_with("ihs4factor"),
                names_to = "region", 
                values_to = "ihs4_factor") %>% 
-#  mutate(cons_unitA = str_extract(measure_id, "(?<=\\_)[:alnum:]+")) %>% 
- separate(measure_id, c("item_code", "cons_unitA"), sep ="_", remove = FALSE) %>% 
+# Separating the item code and the unit code
+  separate(measure_id, c("item_code", "cons_unitA"), sep ="_", remove = FALSE) %>% 
+  # Joining by cons_unitA to get unit (name)
   left_join(., ihs4 %>% distinct(cons_unitA, unit)) 
 
+# Changing the factor for the region to their numeric code (n->s==1->3)
 nsu.df$region[nsu.df$region == "ihs4factor_n"] <- 1
 nsu.df$region[nsu.df$region == "ihs4factor_c"] <- 2
 nsu.df$region[nsu.df$region == "ihs4factor_s"] <- 3
 
+# Converting it inot an interger
 nsu.df$region<- as.integer(nsu.df$region)
 nsu.df$item_code <- as.integer(nsu.df$item_code)
 
 # Own-production NSU to SU (kg/d) ----
 
+# Checking missing food item/unit missingness
 ihs4 %>% 
   left_join(., nsu.df, by = c("item_code_st"= "item_code", "region",
                               "prod_unitA" = "cons_unitA")) %>% 
   filter(is.na(ihs4_factor))
 
+ihs4 %>% 
+  left_join(., nsu.df, by = c("item_code_st"= "item_code", "region",
+                              "prod_unitA" = "cons_unitA")) %>% 
+  filter(is.na(ihs4_factor)) %>% count()
+
+# Adding the units & calculating kg/d for those available
 ihs4 <- ihs4 %>% 
   left_join(., nsu.df, by = c("item_code_st"= "item_code", "region",
                               "prod_unitA" = "cons_unitA")) %>% 
@@ -47,13 +59,26 @@ ihs4 <- ihs4 %>%
   
 sum(is.na(ihs4$prod_kg_d))
 
+
 # Own-production from total consumption
 
-ihs4 %>% filter(is.na(prod_kg_d)) %>% 
+ihs4 %>% 
+  filter(is.na(prod_kg_d)) %>% 
   mutate(prod_kg_d = ifelse(cons_quant == prod_quant & cons_unitA == prod_unitA, 
                              kg_d, prod_kg_d)) %>%
            filter(is.na(prod_kg_d) & !is.na(prod_quant)) %>% 
-          filter(prod_quant >0) %>% dplyr::select(ends_with("quant"), cons_unitA, prod_unitA)
+          filter(prod_quant >0) %>% 
+  dplyr::select(ends_with("quant"), cons_unitA, prod_unitA,  kg_d, prod_kg_d) %>% View()
+
+# Checking the units missing
+missing <- ihs4 %>% 
+  filter(is.na(prod_kg_d)) %>% 
+  mutate(prod_kg_d = ifelse(cons_quant == prod_quant & cons_unitA == prod_unitA, 
+                            kg_d, prod_kg_d)) %>%
+  filter(is.na(prod_kg_d) & !is.na(prod_quant)) %>% 
+  filter(prod_quant >0) %>% distinct(prod_unitA, item_code) 
+
+nsu.df %>% filter(cons_unitA %in% unique(missing$prod_unitA)) %>% View()
 
 # 1) Using food consumed in kg/d calculated from total consumption (same quantity & same units) to own production
 ihs4  <- ihs4 %>% 
@@ -94,6 +119,22 @@ ihs4 %>%
                               "prod_unitA" = "cons_unitA")) %>% 
   filter(is.na(ihs4_factor)) %>% distinct(prod_unitA, cons_unitA)
 
+ihs4 %>% 
+  filter(is.na(prod_kg_d)  & prod_quant >0) 
+
+# Checking effect for maize
+ihs4 %>% 
+  filter(is.na(prod_kg_d)  & prod_quant >0) %>% 
+  filter(grepl("maize", item, ignore.case = TRUE))
+
+# 4) Calculating from factor from NSU from consumed to own production
+# Because it was a fraction of total consumption and we did not have a value for NSU
+
+ihs4  <- ihs4 %>% 
+  mutate(comment = ifelse(is.na(prod_kg_d) & !is.na(prod_quant),
+                          "Quantity calculated from factor (different cons_unitA) different quantity", comment),        
+         prod_kg_d = ifelse(is.na(prod_kg_d) & !is.na(prod_quant),  
+                            (prod_quant*factor)/7, prod_kg_d))
 ihs4 %>% 
   filter(is.na(prod_kg_d)  & prod_quant >0) 
 
@@ -140,13 +181,25 @@ ihs4 %>% filter(grepl("maize", item, ignore.case = TRUE)) %>%
 ihs4 %>% filter(grepl("fish", item, ignore.case = TRUE)) %>% 
   filter(prod_kg_d <20) %>% 
   ggplot(aes(as.factor(item), prod_kg_d)) + 
-  geom_boxplot(aes(colour = as.factor(region)))
+  geom_boxplot(aes(colour = as.factor(region))) +
+  coord_flip()
+
+ihs4 %>% filter(grepl("fish", item, ignore.case = TRUE)) %>% 
+  filter(kg_d <20) %>% 
+  ggplot(aes(as.factor(item), kg_d)) + 
+  geom_boxplot(aes(colour = as.factor(region))) +
+  coord_flip()
+
+
+# MAPS: 
+source(here::here("boundaries.R"))
 
 variables <- c("item_code", "item", "district")
 variables <- c( "district")
 
 c("millet", "sorghum", "rice", "maize")
 food <- "maize"
+food <- "fish"
 
 mwi %>% left_join(., ihs4 %>%
         filter(grepl(food, item, ignore.case = TRUE)) %>% 

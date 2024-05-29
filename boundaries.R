@@ -12,5 +12,8 @@ mwi <- st_read(here::here("data", "mwi-boundaries",
 head(mwi)
 plot(mwi[, "ADM2_EN"])
 
+# Checking the district of the "cities". 
+test <- mwi %>% filter(grepl("Mzuzu|Mzimba", ADM2_EN, ignore.case = TRUE)) 
+plot(test[, "ADM2_EN"])
 
 mwi$district <- as.integer(gsub("MW", "", mwi$ADM2_PCODE))
