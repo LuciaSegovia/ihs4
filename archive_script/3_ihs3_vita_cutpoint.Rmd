@@ -7,11 +7,11 @@ output: html_document
 
 IMPORT DATA
 ```{r}
-ihs3 <- read.csv('/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/analysis/mwi_ihs3/tblFoodConsumption_constrained.csv')
+ihs3 <- read.csv('tblFoodConsumption_constrained.csv')
 
-ihs3_hh <- read.csv('/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/analysis/mwi_ihs3/tblHouseHoldInfo.csv')
+ihs3_hh <- read.csv('tblHouseHoldInfo.csv')
 
-fct3 <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/analysis/mwi_ihs4/food_comp_tbls/ihs_fct_v2.csv")
+fct3 <- read.csv("food_comp_tbls/ihs_fct_v2.csv")
 
 ihs3_m <- merge(x=ihs3, y=fct3 , by.x='FoodItemCode', by.y='fcode', fill=-9999, all.x = TRUE) %>% arrange(Case_ID)
 
@@ -59,7 +59,7 @@ vita_hh %>% select(case_id, rae_hh, rae_hh_day, rae_ame_day, adulteq)
 
 Compare HH-VitA-RAE per day with EAR and RNI
 ```{r}
-ihs3_vita_ref <- read.csv('/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/analysis/mwi_ihs3/qryEAR_vs_Consumption_HHinfo.csv')
+ihs3_vita_ref <- read.csv('qryEAR_vs_Consumption_HHinfo.csv')
 
 hh_vita_ref2 <- merge(x=vita_hh, y=ihs3_vita_ref , by.x='case_id', by.y='case_id', fill=-9999, all.x = TRUE) 
 

@@ -1,8 +1,8 @@
 ---
 title: "ihs4_cleaning"
-author: 
-- "Author - Kevin Tang"
-- "Collaborator - Lucia Segovia de la Revilla"
+authors: 
+- "Kevin Tang (Author)"
+- "Lucia Segovia de la Revilla (Collaborator)"
 date: "3/3/2020"
 last-modified: "2023/03/28"
 output: html_document
@@ -21,13 +21,11 @@ Hence, we need to load the file hh_mod_g1 (household questionnaire module G, 1- 
 ```{r}
 #--- Load libraries - reminder to always load tidyverse last
 
-library(epiDisplay)
 library(plyr)
 library(magrittr)
 library(foreign)
-library(psych)
 library(readxl)
-library(tidyverse)
+library(dplyr)
 
 #--- Change to show no scientific notation & round to 3 decimal places
 options(scipen = 10, digits=3) 
@@ -347,7 +345,14 @@ ihs4$measure_id[is.na(ihs4$cons_unit)] <- NA
 
 ihs4 %>%  dplyr::count(item_code_st, item) %>% arrange(item_code_st)
 
-write.csv(ihs4, here::here("data","inter-output", "hh_mod_g_clean.csv"), row.names = FALSE)
+```
+
+Saving the output 
+
+```{r}
+
+# Cleaned food items others & NSU recoded
+saveRDS(ihs4, here::here("data","inter-output", "hh_mod_g_clean.RDS"))
 
 ```
 

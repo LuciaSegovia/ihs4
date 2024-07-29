@@ -1,0 +1,237 @@
+---
+title: "outliers"
+author: 
+ - "Kevin Tang (Author)"
+ - "Lucia Segovia de la Revilla (Collaborator)"
+date: "11/11/2020"
+udate: 06/07/2024"
+output: html_document
+---
+
+# Introduction
+
+
+```{r}
+# Cleaning environment
+rm(list = ls())
+
+# Loading packages
+library(dplyr) # Data wrangling 
+library(ggplot2) # Data Viz
+
+# Loading data
+# Household survey data (from 3_nep.Rmd)
+ihs4 <- read.csv(here::here("data", "inter-output", "hh_mod_g_nep.csv"))
+# AFE/AME factors (from 4_ame.Rmd)
+hh.hme <- read.csv(here::here("data", "inter-output", "ihs4.afe_v1.0.0.csv"))
+
+```
+
+# Manage outliers: eliminate by excess food item intake
+
+Some individual food items may be overestimated due to stockpiling or purchases in bulk. Generally not a problem for surveys which have shorter recall periods but it doesn't hurt to check to see if there any outlandish overestimates of particular food items. In this chunk, I divided the kgs of each food items consumed by the number of people per household and the total number of days in the recall to get the total kgs consumed per capita per day. I know per capita is not the best way to divide out consumption data, but I don't think it will make up that big of a difference for this exercise and I need to push on with this part of the analysis. 
+
+
+```{r}
+
+# Merging HH data with AME/AFE factors
+ihs4 <- merge(x=ihs4, y=hh.hme, by.x='HHID', by.y='HHID', fill=NA, all.x = TRUE)
+
+# Calculating AME
+ihs4$g_ame_d <- ihs4$g_d_nep/ihs4$ame
+
+# Calculating AFE
+ihs4$g_afe_d <- ihs4$g_d_nep/ihs4$afe
+
+# Viz: Consumption (kg/ame/day) 
+## (114= spaghetti, 101= maize flour, 311=groundnuts, 408= tomatos)
+
+ihs4 %>% filter(item_code==114) %>% 
+  ggplot(., aes(x=log(g_afe_d))) + 
+  geom_histogram() +
+  theme_bw()
+
+```
+
+
+Consumption quantity generally tends to be non-normally distributed with a right skew, so to define a more appropriate cut-off, we can just log-transform the distribution to normalize and then take +4SDs (n=907) and +5SD (n=473) from the mean to identify households with potential unreasonable consumption estimates. For this analysis, it because slightly more complicated since there were a number of consumption quantities <1, meaning the log transformed value would be negative making calculating the SD a bit more challenging. 
+
+To overcome this, for each consumption value I just applied the function f(x) = log(x+1) to ensure that SDs (or in this case SD+1) could be calculated for all food items. 
+
+
+```{r}
+
+# Calculate medians and SDs
+ihs4 %>% group_by(item_code) %>% 
+  summarise(n=n(),
+            mean.logplus1=mean(log(g_afe_d+1), na.rm = TRUE), 
+            median=median(g_afe_d, na.rm = TRUE),
+            sd.logplus1=sd(log(g_afe_d+1), na.rm = TRUE), 
+            Q25.log=quantile(log(g_afe_d), c(0.25), na.rm = TRUE), 
+            Q5.log=quantile(log(g_afe_d), c(0.5), na.rm = TRUE), 
+            Q75.log=quantile(log(g_afe_d), c(0.75), na.rm = TRUE), 
+            Q95.log=quantile(log(g_afe_d), c(0.95), na.rm = TRUE), 
+            ) %>% View()
+```
+
+
+```{r, eval=FALSE}
+
+# Visualising the outliers per food item
+# Calculate medians and SDs & quantiles to be used as cut offs
+
+cutoff <- ihs4 %>% group_by(item_code) %>% 
+  summarise(n=n(),
+            mean.logplus1=mean(log(g_afe_d+1), na.rm = TRUE), 
+            median=median(g_afe_d, na.rm = TRUE),
+            sd.logplus1=sd(log(g_afe_d+1), na.rm = TRUE), 
+            Q25.log=quantile(log(g_afe_d), c(0.25), na.rm = TRUE), 
+            Q5.log=quantile(log(g_afe_d), c(0.5), na.rm = TRUE), 
+            Q75.log=quantile(log(g_afe_d), c(0.75), na.rm = TRUE), 
+            Q95.log=quantile(log(g_afe_d), c(0.95), na.rm = TRUE))
+
+ihs4$item_code <- as.character(ihs4$item_code)
+
+```
+
+Now, we are exploring the effect of different cut off using histograms
+
+
+```{r}
+
+# Using the quantiles from the log-distribution
+
+# Select the item
+items <- "114"
+
+ihs4 %>% 
+  dplyr::filter(consYN == "1",  # Filtering only consumed
+                item_code == items) %>% 
+  mutate(log.ame = log(g_afe_d),  # Log-transforming consumption
+    # Generating a variable for visualising the outliers
+         oultier_cat =  ifelse(log.ame >=     as.numeric(cutoff$Q95.log[cutoff$item_code %in% items]), "outlier" , "ok")) %>% 
+  ggplot(aes(g_afe_d, fill = oultier_cat)) + 
+  # If vis is not nice change the bin size
+   geom_histogram(bins = 100) +
+  theme_bw()
+
+```
+
+
+```{r}
+
+# Using the +4SD (of log.plus1 SD)
+
+# Select the item
+items <- "114"
+
+ihs4 %>% 
+  dplyr::filter(consYN == "1", 
+                item_code == items) %>% 
+  mutate(
+    oultier_cat =  ifelse(g_afe_d >= as.numeric(cutoff$sd.logplus1[cutoff$item_code %in% items]*4), "outlier" , "ok")) %>% 
+  ggplot(aes(g_afe_d, fill = oultier_cat)) + 
+   geom_histogram(bins = 50) +
+  geom_vline(xintercept = cutoff$sd.logplus1[cutoff$item_code %in% items]*4, colour = "red") +
+  geom_vline(xintercept = mean(ihs4$g_afe_d, na.rm = TRUE)+cutoff$sd.logplus1[cutoff$item_code %in% items]*4, colour = "yellow") +
+  theme_bw()
+
+```
+
+Creating a function to evaluate the effect of different cut offs for the outliers
+(Not working!)
+
+```{r, eval=FALSE}
+# Function to test multiple cut off points!
+## NOT WORKING ##
+data.df <- ihs4
+n <- 3
+out_var <- paste0("cut_off", n)
+out_cat <- paste0("oultier_cat", n)
+data.df[, out_var] <- NA
+data.df[, out_cat] <- NA
+
+for(i in 1:nrow(data.df)){
+data.df[, out_var][[i]] <-  cutoff$sd.logplus1[cutoff$item_code %in% data.df$item_code[i]]*n
+
+if(is.na(data.df$g_afe_d[[i]])){next}
+
+ if(data.df$g_afe_d[[i]] >= data.df[, out_var][[i]]){
+   
+   data.df[, out_cat][[i]] <- "outlier"
+   
+ }else{
+   
+    data.df[, out_cat][[i]] <- "ok"
+ }
+} 
+
+data.df %>% 
+  ggplot(aes(g_afe_d, fill = oultier_cat3)) + 
+   geom_histogram(bins = 50) +
+  geom_vline(xintercept = cut_off3, colour = "red") +
+  geom_vline(xintercept = mean(ihs4$g_afe_d, na.rm = TRUE)+cut_off3, colour = "yellow") +
+  facet_wrap(~item_code)
+  theme_bw()
+
+
+```
+
+
+```{r}
+# Checking outliers 
+
+ihs4 <- ihs4 %>% mutate(log.g_afe_d.plus1 =log(g_afe_d+1))
+
+#Calculate medians and SDs of the log-transformed + 1
+ihs4.summ <- ihs4 %>% group_by(item_code) %>% 
+  summarise(n=n(),
+            mean.logplus1=mean(log(g_afe_d+1), na.rm = TRUE), 
+            median=median(g_afe_d, na.rm = TRUE),
+            sd.logplus1=sd(log(g_afe_d+1), na.rm = TRUE)) %>% 
+  # Calculating 4 and 5 SD of the log-transformed & cut-off
+  mutate(sd4 = sd.logplus1*4, 
+         sd5 = sd.logplus1*5, 
+         cut4 = sd4 + mean.logplus1, 
+         cut5 = sd5 + mean.logplus1) %>% 
+  # Selecting the cut-offs
+  select(item_code, median, cut4, cut5)
+
+# Merging the info for outliers
+ihs4 <- merge(x=ihs4, y=ihs4.summ , by.x='item_code', by.y='item_code', fill=-9999, all.x = TRUE) %>% arrange(HHID)
+
+# Identifying and replacing outliers with the replace value (median value)
+ihs4 <- ihs4 %>% # identifying the outliers
+  mutate(outlier4 = ifelse(log.g_afe_d.plus1>cut4, "outlier", NA), 
+         outlier5 = ifelse(log.g_afe_d.plus1>cut5, "outlier", NA),
+         # New variable with implausible values replaced to median (by food item)
+         g_afe_replace = ifelse(log.g_afe_d.plus1>cut5, median, g_afe_d)) 
+
+
+## Checking the effect of the outliers
+
+ ihs4 %>% filter(outlier5 == "outlier") %>% 
+   ggplot(., aes(x=log(g_afe_d), colour = item_code)) + 
+   geom_histogram() +
+   theme_bw()
+
+
+
+```
+
+
+
+```{r, eval=FALSE}
+
+# Saving the data
+saveRDS(ihs4,  here::here("data", "inter-output", "hh_mod_g_afe_clean.RDS"))
+
+```
+
+
+After identifying the potential outliers, I scanned through the list to see what was the potential cause of the deviation from the mean and if the reason warrented exclusion/reassignment of the value. There seemed to be three general reasons for the increased reported consumption:
+  1. households actually consumped that much more of the food item;
+  2. households purchased items in bulk/stockpiled and recalled the entire quantity purchased rather than the entire quantity consumed;
+  3. misreport by eneumerator (e.g. cons_quant reported as "250" for  "250g tin" when in reality it should just be "1 250g tin").
+  
+In general, it is pretty difficult to differentiate between whether the increased cons_quant is due to reason 1 or reason 2 listed above. Some food items/associated quantities are more obvious (e.g. 1kg of salt per person per day) but most are a toss up. I think that this issue is well recognized in HCES data overall, so I think it is best to replace all these identified outlier values as we risk over-cleaning the data. Therefore, for this exercise I decided to clean out values using a hard-line rule and replaced all outliers with the median value of that consumed quantity for the food item. 

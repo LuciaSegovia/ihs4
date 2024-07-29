@@ -6,7 +6,7 @@ library(tidyverse)
 options(scipen=999)
 
 
-# Read in the file------
+# Read in the files ------
 
 
 ihs4 <- read.csv(here::here("data", "inter-output", "hh_mod_g_processed.csv")) %>% 
@@ -40,7 +40,7 @@ nsu.df$item_code <- as.integer(nsu.df$item_code)
 
 # Own-production NSU to SU (kg/d) ----
 
-# Checking missing food item/unit missingness
+# Checking missing food item/unit missing-ness
 ihs4 %>% 
   left_join(., nsu.df, by = c("item_code_st"= "item_code", "region",
                               "prod_unitA" = "cons_unitA")) %>% 
@@ -191,7 +191,7 @@ ihs4 %>% filter(grepl("fish", item, ignore.case = TRUE)) %>%
   coord_flip()
 
 
-# MAPS: 
+# MAP: 
 source(here::here("boundaries.R"))
 
 variables <- c("item_code", "item", "district")

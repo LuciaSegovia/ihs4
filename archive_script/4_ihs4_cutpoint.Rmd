@@ -23,42 +23,19 @@ sdg %>% mutate(log.gdp = log(gdp))
 
 Load most updated data
 ```{r}
-ihs4 <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/hces/mwi/ihs2016/hh_mod_g_kg.csv")
-```
-
-Convert Non-Standard Units to KGs (data = NSU factors, HH regions)
-```{r}
-ihs4 <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/hces/mwi/ihs2016/hh_mod_g_clean.csv")
-
-unit_conv <-read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/hces/mwi/unit_factors/ihs4factors_v5.csv")
-
-hh_id <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/hces/mwi/ihs2016/hh_mod_a_filt.csv")
-region <- hh_id %>% select(case_id, region)
-
-ihs4 <- merge(x=ihs4, y=unit_conv , by.x='measure_id', by.y='measure_id', fill=-9999, all.x = TRUE) %>% arrange(item_code) %>% arrange(id)
-
-ihs4 <- merge(x=ihs4, y=region , by.x='id', by.y='case_id', fill=-9999, all.x = TRUE) %>% arrange(item_code) %>% arrange(id)
-
-ihs4$factor_n <- ifelse(ihs4$region == 1, ihs4$factor_n, NA)
-ihs4$factor_c <- ifelse(ihs4$region == 2, ihs4$factor_c, NA)
-ihs4$factor_s <- ifelse(ihs4$region == 3, ihs4$factor_s, NA)
-ihs4$factor <- rowSums(ihs4[,c("factor_n", "factor_c", "factor_s")], na.rm=TRUE)
-ihs4 <- ihs4 %>% select(-factor_n, -factor_c, -factor_s)
-
-ihs4$cons_kg <-ihs4$cons_quant*ihs4$factor
-
-write.csv(ihs4, "/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/hces/mwi/ihs2016/hh_mod_g_kg.csv")
-
+ ihs4 <- read.csv(here::here("data", "inter-output", "hh_mod_g_kg.csv"))
+      
 ```
 
 
->Manage outliers #1: eliminate by excess food item intake (data = HH roster)
+
+# Manage outliers #1: eliminate by excess food item intake (data = HH roster)
 
 Some individual food items may be overestimated due to stockpiling or purchases in bulk. Generally not a problem for surveys which have shorter recall periods but it doesn't hurt to check to see if there any outlandish overestimates of particular food items. In this chunk, I divided the kgs of each food items consumed by the number of people per household and the total number of days in the recall to get the total kgs consumed per capita per day. I know per capita is not the best way to divide out consumption data, but I don't think it will make up that big of a difference for this exercise and I need to push on with this part of the analysis. 
 
 Consumption quantity generally tends to be non-normally distributed with a right skew, so to define a more approriate cut-off, we can just log-transform the distribution to normalize and then take +2SDs from the mean to identify households with unreasonable consumption estimates. The households which lie in the upper limit tail, we can cap their total consumption of the food item at whatever consumption quantity the +4/5SD from mean represents 
 ```{r}
-hh_roster <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/hces/mwi/ihs2016/hh_mod_b.csv")
+hh_roster <- read.csvhere::here("data",  "hh_mod_b.csv")
 percapita <- hh_roster %>% count(HHID)
 
 ihs4 <- merge(x=ihs4, y=percapita, by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
@@ -99,18 +76,20 @@ ihs4 %>% filter(item_code==408) %>%
 
 This step requires us to eliminate food weight that would have been recalled as part of the HCES questionnaire, but would not have actually been consumed due to processing, preparation, or cooking. This includes parts of food like banana peels, skins of fruits and tubers that would have been peeled, bones of large fish that would have been discarded etc. There isn't any good data to estimate exactly how much weight is lost, so we have to apply an "analyst's best estimate" here. We can change these estimates if we find better data or if any new studies are conducted in the future looking specifically at this, but I honestly have no idea what funder would find this kind of work compelling enough to throw money at. We might just have to stick with the assumptions we have so far.
 ```{r}
-waste <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/hces/mwi/waste_factor.csv")
+ep <- read.csv(here::here("data", "factors", "nep.factors.csv"))
 
-waste <- merge(x=fcode, y=waste , by.x='code', by.y='item_code', fill=-9999, all.x = TRUE)
-waste <- waste %>% select(code, waste)
+#waste <- merge(x=fcode, y=waste , by.x='code', by.y='item_code', fill=-9999, all.x = TRUE)
+#waste <- waste %>% select(code, waste)
 
-ihs4 <- merge(x=ihs4, y=waste , by.x='item_code', by.y='code', fill=-9999, all.x = TRUE) %>% arrange(HHID)
+ihs4 <- merge(x=ihs4, y=ep , 
+              #by.x='item_code', by.y='code',
+              fill=-9999, all.x = TRUE) %>% arrange(HHID)
 
-ihs4$cons_kg_w <- ihs4$cons_kg * (1-ihs4$waste)
+ihs4$cons_kg_w <- ihs4$cons_kg * ihs4$nep
 
 ```
 
->Adjustment for yield (data = yeild factors or moisture weight)
+## Adjustment for yield (data = yeild factors or moisture weight)
 
 Dry weight equivalent: this has been used by Edward to calculate mineral micronutrients in previous work. Nothing wrong with the analysis he did, but I think he was able to complete that analysis with the Dry Weight Equivalent method because he didn’t conduct any estimations on any vitamins that would have been affected by the water content of the food items (i.e. energy and mineral micronutrients). For this IHS4 analysis and for the overall MAPS project, we are planning on including a number of water-soluble vitamins, such as a couple B-vitamins (B6, folate, B12) and VitC. Vitamin content of these vitamins would be a function of the water content of these foods and therefore the dry weight equivalent would not be appropriate. I see how dry weights would be advantageous for food composition scientists, especially from the BYO data features of the MAPS tool, however, advancing with this method would not account for certain vitamins of interest to us.
  
@@ -119,9 +98,9 @@ Yield factors: this method seems to be the more standard method to account for m
 One thing I could do is see if we could apply different methods depending on the commodity category, as this seems to be the issue. For example, most VitC would be coming from fruits and veg, so we include moisture and match these items to fresh weight equivalents. Cereals and grains would use dry weight equivalents to account for Edwards arguments in the past email. Would be tricky with meats and legumes and a number of them contain both water and non-water soluble micronutrients, so no sure which method to apply algorithmically for those food groups…perhaps cereals and grains will use the dry weight methods while all other foods use yield factors?
 
 ```{r}
-fctmatch <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/hces/mwi/fct_matching/ihs4_fctmatch.csv")
+fctmatch <- read.csv(here::here("data", "hs4_fctmatch.csv"))
 
-mwifct <- read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/food_comp_tables/mwi/mwi_fct.csv")
+mwifct <- read.csv(here::here("data",  "mwi_fct.csv"))
 
 mwifctitems <- mwifct %>% select(code, item_eng)
 
@@ -129,8 +108,10 @@ fcode_match <- merge(x=fcode, y=fctmatch , by.x='code', by.y='fcode', fill=-9999
 
 fcode_match <- merge(x=fcode_match, y=mwifctitems , by.x='mwi_fct_code', by.y='code', fill=-9999, all.x = TRUE) %>% arrange(code) %>% select(code, item, mwi_fct_code, item_eng, everything())
 
-d <- fcode_match %>% select(code, item, item_eng, yield.assumption)
-write.csv(d, "/Users/kevintang/Desktop/items_match.csv")
+test <- fcode_match %>% select(code, item, item_eng, yield.assumption)
+
+# write.csv(test, here::here("data", "inter-output", "items_match.csv")
+
 ```
 
 Food composition of food items (data = food composition tables)
@@ -151,7 +132,7 @@ ihs4 %>% filter(!is.na(cons_unitA)) %>% select(cons_unit, cons_unitA)
 
 
 ```{r}
-ihs4_health <-read.csv("/Users/kevintang/Library/Mobile Documents/com~apple~CloudDocs/Documents/LSHTM/phd epidemiology/2019 2020/data/hces/mwi/ihs2016/hh_mod_d.csv")
+ihs4_health <-read.csv(here::here("data", "hh_mod_d.csv"))
 
 ihs4_health %>% count(hh_d05a)
 ihs4_health %>% filter(hh_d05a==30) %>% count(case_id) %>% arrange(n)
