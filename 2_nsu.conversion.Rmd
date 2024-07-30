@@ -38,7 +38,6 @@ nsu.factors <-read.csv(here::here("data", "factors", "nsu.factors.csv"),  fileEn
 names(nsu.factors)
 dim(nsu.factors)
 
-
 hh_id <- read.csv(here::here("data", "hh_mod_a_filt.csv"))
 
 

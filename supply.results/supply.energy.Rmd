@@ -19,9 +19,9 @@ library(tidyverse)
 >Data
 
 ```{r}
-ihs4 <- read.csv("/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_g_final.csv")
+ihs4 <- read.csv("hh_mod_g_final.csv")
 
-hh.hme <- read.csv("/Users/kevintang/Documents/ihs4/data/ame/hme.final.csv")
+hh.hme <- read.csv("hme.final.csv")
 
 ```
 
@@ -109,5 +109,5 @@ ihs4.energy <- ihs4.energy %>% rename(energy.cergra = 'sum.cergra$energy.supply'
 > DONE: archive
 
 ```{r}
-write.csv(ihs4.energy, "/Users/kevintang/Documents/ihs4/data/results/energy.csv")
+write.csv(ihs4.energy, "results/energy.csv")
 ```

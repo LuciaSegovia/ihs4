@@ -17,9 +17,9 @@ library(tidyverse)
 >Data
 
 ```{r}
-ihs4 <- read.csv("/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_g_nep.csv")
+ihs4 <- read.csv("hh_mod_g_nep.csv")
 
-fctmatch <- read.csv("/Users/kevintang/Documents/ihs4/data/fct.match/fct.match.v2.csv")
+fctmatch <- read.csv("fct.match.v2.csv")
 ```
 
 >Combining food consumption quantity with food composition data 
@@ -31,5 +31,5 @@ ihs4 <- merge(x=ihs4, y=fctmatch , by.x='item_code', by.y='code.ihs', fill=-9999
 > DONE: archive
 
 ```{r}
-write.csv(ihs4, "/Users/kevintang/Documents/ihs4/data/ihs4/hh_mod_g_final.csv")
+write.csv(ihs4, "hh_mod_g_final.csv")
 ```
