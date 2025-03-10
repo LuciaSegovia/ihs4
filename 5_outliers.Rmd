@@ -4,7 +4,7 @@ author:
  - "Kevin Tang (Author)"
  - "Lucia Segovia de la Revilla (Collaborator)"
 date: "11/11/2020"
-udate: 06/07/2024"
+update: 06/07/2024"
 output: html_document
 ---
 
@@ -23,7 +23,11 @@ library(ggplot2) # Data Viz
 # Household survey data (from 3_nep.Rmd)
 ihs4 <- read.csv(here::here("data", "inter-output", "hh_mod_g_nep.csv"))
 # AFE/AME factors (from 4_ame.Rmd)
-hh.hme <- read.csv(here::here("data", "inter-output", "ihs4.afe_v1.0.0.csv"))
+hh.hme <- read.csv(here::here("data", "inter-output", "ihs4.afe_v1.0.1.csv")) 
+names(hh.hme)
+
+# Checking missing values
+sum(ihs4$consYN == 1 & is.na(ihs4$g_d_nep))
 
 ```
 
@@ -70,7 +74,7 @@ ihs4 %>% group_by(item_code) %>%
             Q25.log=quantile(log(g_afe_d), c(0.25), na.rm = TRUE), 
             Q5.log=quantile(log(g_afe_d), c(0.5), na.rm = TRUE), 
             Q75.log=quantile(log(g_afe_d), c(0.75), na.rm = TRUE), 
-            Q95.log=quantile(log(g_afe_d), c(0.95), na.rm = TRUE), 
+            Q95.log=quantile(log(g_afe_d), c(0.95), na.rm = TRUE) 
             ) %>% View()
 ```
 
@@ -232,6 +236,6 @@ saveRDS(ihs4,  here::here("data", "inter-output", "hh_mod_g_afe_clean.RDS"))
 After identifying the potential outliers, I scanned through the list to see what was the potential cause of the deviation from the mean and if the reason warrented exclusion/reassignment of the value. There seemed to be three general reasons for the increased reported consumption:
   1. households actually consumped that much more of the food item;
   2. households purchased items in bulk/stockpiled and recalled the entire quantity purchased rather than the entire quantity consumed;
-  3. misreport by eneumerator (e.g. cons_quant reported as "250" for  "250g tin" when in reality it should just be "1 250g tin").
+  3. misreport by enumerator (e.g. cons_quant reported as "250" for  "250g tin" when in reality it should just be "1 250g tin").
   
 In general, it is pretty difficult to differentiate between whether the increased cons_quant is due to reason 1 or reason 2 listed above. Some food items/associated quantities are more obvious (e.g. 1kg of salt per person per day) but most are a toss up. I think that this issue is well recognized in HCES data overall, so I think it is best to replace all these identified outlier values as we risk over-cleaning the data. Therefore, for this exercise I decided to clean out values using a hard-line rule and replaced all outliers with the median value of that consumed quantity for the food item. 

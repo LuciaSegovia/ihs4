@@ -1,0 +1,259 @@
+# Food consumption allocation
+
+## Introduction
+
+The goal is to calculate the Adult Female Equivalent (AFE) and Adult Male Equivalent (AME) of each household in the survey (IHS4). These are household allocation factors that distribute the food reported consumed by the household among the household member assuming that food was allocated proportional to the energy requirement of each household member. Therefore, children would be allocated a smaller prortion than adult men.
+
+
+```{r, prep-enviroment}
+
+# Cleaning environment
+rm(list = ls())
+
+# Loading libraries
+library(dplyr) # Data wrangling 
+
+# Loading data
+ihs4.roster <- read.csv(here::here("data", "hh_mod_b.csv")) # HH's Roster
+ihs4_health <- read.csv(here::here("data", "hh_mod_d.csv")) # Health
+ame <- read.csv(here::here("data", "ame.factors.csv")) # AME factors
+ame.spec <- read.csv(here::here("data", "ame.spec.csv")) # AME specific
+names(ame.spec)
+
+# ame.spec <- ame.spec %>% select(cat, ame.spec, afe.spec)
+  
+#dhs15 <- read.dta("dhs/MWPR7AFL.DTA")
+
+```
+
+
+# HH roster data
+
+Renaming variables and checking for missing values
+
+```{r}
+
+ihs4.roster$case_id <- as.character(ihs4.roster$case_id)
+
+#Sex
+names(ihs4.roster)[names(ihs4.roster) == 'hh_b03'] <- 'sex'
+sum(is.na(ihs4.roster$sex)) # No missing values
+
+#Age
+names(ihs4.roster)[names(ihs4.roster) == 'hh_b05a'] <- 'age_y'
+sum(is.na(ihs4.roster$age_y)) # One missing values
+ihs4.roster$HHID[is.na(ihs4.roster$age_y)] # One missing values
+
+names(ihs4.roster)[names(ihs4.roster) == 'hh_b05b'] <- 'age_m'
+
+```
+
+We identified that the missing age, is for one member of the family which is the mother of the household head (hh_b04 == 6 & sex ==2). Because the base afe/ame are the same above 60 years old, we are using the 60, since the head of the household is 47, it is unlikely that the mother is any younger that 60. 
+
+```{r}
+
+# Checking HH missing AME/AFE
+ihs4.roster %>% filter(HHID == "7ce5f6cb4ffc4bf0b0821037efb5b8ab")
+
+ihs4.roster$age_y[ihs4.roster$HHID == "7ce5f6cb4ffc4bf0b0821037efb5b8ab" & ihs4.roster$hh_b04 == 6] <- 60
+
+```
+
+Now we are selecting the variables and, we need to identify children of 2 years and youngers. 
+
+
+```{r}
+
+# Selecting the variables
+ihs4.roster.c <- ihs4.roster %>% select(case_id, HHID, sex, age_y, age_m)
+
+# Checking min. years
+min(as.numeric(ihs4.roster.c$age_y))
+
+# Checking max. year when months reported
+max(as.numeric(ihs4.roster.c$age_y[!is.na(ihs4.roster.c$age_m)]))
+
+```
+However, because age is provided in years and months, we are going to convert years in months, and using the 24months cut.
+
+```{r}
+ihs4.roster.c$age_y <- as.numeric(ihs4.roster.c$age_y)
+ihs4.roster.c$age_m <- as.numeric(ihs4.roster.c$age_m)
+
+ihs4.roster.c <- ihs4.roster.c %>%
+  mutate(age.m.total = ifelse(is.na(age_y), age_m, 
+                          age_y*12 + age_m), 
+         age.u2 = ifelse(age.m.total <=24, TRUE, FALSE ))
+
+# Per capita variable
+ihs4.roster.c <- ihs4.roster.c %>% mutate(pc = 1)
+```
+
+We will used this as proxy for lactating women, as that information is not captured in the IHS4 survey but it is going to be important for the energy requirments. 
+
+
+We are also calculating the number of HH members, which will be compared with the variable reported in the HH information module.  
+
+```{r}
+
+# No. of people reported per household
+hh.pc <- aggregate(ihs4.roster.c$pc, by=list(HHID=ihs4.roster.c$HHID), FUN=sum)
+
+names(hh.pc)[names(hh.pc) == 'sum.ihs4.roster.c$pc'] <- 'pc'
+
+
+```
+
+
+In order to calculate the AFE/ AME, we need to calculate the energy requirement. Ideally, we would have information of weight, age of each household member. Beacuse this information was not available. We are assuming a mean weight for women in Malawi based on DHS, 2015-16 data.
+
+::: {.callout-note}
+
+**Women's demographic assumptions**
+
+DHS Data for women's weight (n=8,238)
+Mean woman weight: 55.9 kg
+Median women weight: 54.1 kg
+
+:::
+
+```{r, eval=FALSE}
+
+# Womens Weight in KG
+dhs15 %>% filter(ha2<2500) %>% ggplot(., aes(x=ha2)) + geom_histogram() + theme_bw()
+
+dhs15.c <- dhs15 %>% filter(ha2<2500) 
+mean(dhs15.c$ha2, na.rm=TRUE)
+median(dhs15.c$ha2, na.rm=TRUE)
+
+dhs15.c %>% filter(!is.na(ha2))
+
+```
+
+## Merge HH demographic data with AME/AFE factors
+
+::: {.callout-note}
+
+**Demographic assumptions**
+
+Men's weight: 65kg (assumption)
+Women's weight: 55kg (from DHS)
+PAL: 1.6X the BMR
+
+:::
+
+
+
+```{r}
+
+# Merging Roster data with their AFE/AME factors
+ihs4.roster.c$age_y <- as.factor(ihs4.roster.c$age_y)
+ame$age <- as.factor(ame$age)
+
+ihs4.roster.c <- merge(x=ihs4.roster.c , y=ame , by.x='age_y', by.y='age', fill=-9999, all.x = TRUE) %>% arrange(case_id) %>% select(case_id, HHID, sex, age_y, age_m, age.m.total, age.u2, ame.m, ame.f, afe.m, afe.f)
+
+# Base factor for AME
+ihs4.roster.c <- ihs4.roster.c  %>%
+  mutate(ame.base = ifelse(sex == 1, ame.m,
+               ifelse(sex == 2, ame.f, NA)))
+
+# Base factor for AFE
+ihs4.roster.c <- ihs4.roster.c  %>%
+  mutate(afe.base = ifelse(sex == 1, afe.m,
+               ifelse(sex == 2, afe.f, NA)))
+
+
+
+```
+
+After identifying the energy requirement for adults, we need to make some adjustment for certain condition and age range.
+
+### Dietary energy requirements for children under 1 
+
+```{r}
+
+# create variable for under 1 year old categories
+ihs4.roster.c <- ihs4.roster.c %>% mutate(age.u1.cat = case_when(age.m.total  < 6 ~ "0-5 months",
+                                          age.m.total  >= 6 & age.m.total  < 9 ~ "6-8 months",
+                                          age.m.total  >= 9 & age.m.total  < 12 ~ "9-11 months"))
+
+ihs4.roster.c <- merge(x=ihs4.roster.c , y=ame.spec , by.x='age.u1.cat', by.y='population', fill=-9999, all.x = TRUE) %>% arrange(case_id)
+
+```
+
+### Extra energy required for lactation
+
+```{r}
+ihs4.roster.c <- ihs4.roster.c %>% mutate(ame.lac = case_when(age.u2 =="TRUE" ~ 0.19))
+ihs4.roster.c <- ihs4.roster.c %>% mutate(afe.lac = case_when(age.u2 =="TRUE" ~ 0.24))
+```
+
+> Clean and aggregate AME/AFE values
+
+```{r}
+ihs4.roster.c$ame.spec[is.na(ihs4.roster.c$ame.spec)] <- 0
+ihs4.roster.c$afe.spec[is.na(ihs4.roster.c$afe.spec)] <- 0
+ihs4.roster.c$ame.lac[is.na(ihs4.roster.c$ame.lac)] <- 0
+ihs4.roster.c$afe.lac[is.na(ihs4.roster.c$afe.lac)] <- 0
+
+ihs4.roster.c <- ihs4.roster.c %>% mutate(ame = ame.base + ame.spec + ame.lac, 
+                                          afe = afe.base + afe.spec + afe.lac)
+
+hh.ame <- aggregate(ihs4.roster.c$ame, by=list(HHID=ihs4.roster.c$HHID), FUN=sum)
+hh.afe <- aggregate(ihs4.roster.c$afe, by=list(HHID=ihs4.roster.c$HHID), FUN=sum)
+names(hh.ame)[names(hh.ame) == 'x'] <- 'ame.x'
+names(hh.afe)[names(hh.afe) == 'x'] <- 'afe.x'
+hme <- merge(x=hh.ame , y=hh.afe  , by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+
+```
+
+
+>Extra energy requirements for pregnancy
+
+```{r}
+ihs4_health$case_id <- as.character(ihs4_health$case_id)
+
+#Illness
+names(ihs4_health)[names(ihs4_health) == 'hh_d05a'] <- 'ill1'
+names(ihs4_health)[names(ihs4_health) == 'hh_d05b'] <- 'ill2'
+ihs4_health.c <- ihs4_health %>% select(case_id, HHID, ill1, ill2, hh_d05_oth)
+ihs4.preg <- ihs4_health.c %>% filter(ill1==28 | ill2==28)
+
+ihs4.preg$ame.preg <- 0.11
+ihs4.preg$afe.preg <- 0.14
+ihs4.preg <- ihs4.preg %>% select(HHID, ame.preg, afe.preg)
+
+#hme <- merge(x=hme , y=ihs4.preg , by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE) 
+hme <- left_join(hme , ihs4.preg ) 
+hme$ame.preg[is.na(hme$ame.preg)] <- 0
+hme$afe.preg[is.na(hme$afe.preg)] <- 0
+
+hme$ame <- hme$ame.x + hme$ame.preg
+hme$afe <- hme$afe.x + hme$afe.preg
+
+```
+
+Selecting variables of interest, and adding the per capita variable. Then correcting the AFE/AME for households of only one member. This is because when only one person is living the houehold, all food reported are assumed to be allocated to that person. 
+
+
+```{r}
+hme <- hme %>% select(HHID, ame, afe)
+ hme <- merge(x=hme , y=hh.pc , by.x='HHID', by.y='HHID', fill=-9999, all.x = TRUE)
+ 
+# Adjusting HH with one member to AME/AFE == 1  
+hme <- hme %>% mutate(
+  ame = ifelse(x==1, 1, ame), 
+  afe = ifelse(x==1, 1, afe))
+
+# Checking that there is no missing values
+sum(is.na(hme$afe))
+
+```
+
+Then, we can save the values into a intermediary output. 
+
+```{r}
+# Saving the file
+write.csv(hme, here::here("data", "inter-output", "ihs4.afe_v1.0.1.csv"), row.names = FALSE)
+
+```

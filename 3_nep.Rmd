@@ -24,6 +24,9 @@ nep <- read.csv(here::here("data", "factors", "nep.factors.csv"))
 
 # foodgroup <- read.csv("data/nutrient.supply/foodgroup.csv")
 
+# Checking missing values
+sum(ihs4$consYN == 1 & is.na(ihs4$kg_d))
+
 ```
 
 

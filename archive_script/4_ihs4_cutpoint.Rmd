@@ -33,7 +33,8 @@ Load most updated data
 
 Some individual food items may be overestimated due to stockpiling or purchases in bulk. Generally not a problem for surveys which have shorter recall periods but it doesn't hurt to check to see if there any outlandish overestimates of particular food items. In this chunk, I divided the kgs of each food items consumed by the number of people per household and the total number of days in the recall to get the total kgs consumed per capita per day. I know per capita is not the best way to divide out consumption data, but I don't think it will make up that big of a difference for this exercise and I need to push on with this part of the analysis. 
 
-Consumption quantity generally tends to be non-normally distributed with a right skew, so to define a more approriate cut-off, we can just log-transform the distribution to normalize and then take +2SDs from the mean to identify households with unreasonable consumption estimates. The households which lie in the upper limit tail, we can cap their total consumption of the food item at whatever consumption quantity the +4/5SD from mean represents 
+Consumption quantity generally tends to be non-normally distributed with a right skew, so to define a more approriate cut-off, we can just log-transform the distribution to normalize and then take +2SDs from the mean to identify households with unreasonable consumption estimates. The households which lie in the upper limit tail, we can cap their total consumption of the food item at whatever consumption quantity the +4/5SD from mean represents.
+
 ```{r}
 hh_roster <- read.csvhere::here("data",  "hh_mod_b.csv")
 percapita <- hh_roster %>% count(HHID)

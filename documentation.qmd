@@ -66,5 +66,11 @@ The next step should include weights, and check by different months and district
 Additionally, spatial pattern may arise, so it may be interesting to apply the same model or to create a variogram to see if there is any spatial dependency. It may be worth to adjust/ account for differences in HH size. 
 
 
+## Household food allocation
 
 
+## To-dp list
+
+### AME/AFE function
+
+### Testing allocations

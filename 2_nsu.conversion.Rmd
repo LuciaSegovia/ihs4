@@ -9,7 +9,7 @@ output: html_document
 
 ```{r}
 
-library(epiDisplay)
+#library(epiDisplay)
 library(magrittr)
 library(foreign)
 library(psych)
@@ -32,6 +32,9 @@ ihs4 <- read.csv(here::here("data", "inter-output",  "hh_mod_g_clean.csv"))
 
 names(ihs4)
 dim(ihs4)
+
+# Checking missing values
+sum(ihs4$consYN == 1 & is.na(ihs4$cons_quant))
 
 nsu.factors <-read.csv(here::here("data", "factors", "nsu.factors.csv"),  fileEncoding="UTF-8-BOM")
 

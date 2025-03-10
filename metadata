@@ -1,0 +1,9 @@
+title: "5_ihs4_amefactors"
+author: 
+ - "Kevin Tang (Author)"
+ - "Lucia Segovia de la Revilla (Collaborator)"
+date: "8/20/2020"
+update: 06/07/2024"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
