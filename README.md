@@ -19,4 +19,4 @@ Please, for the scripts to run you need to:
 Happy coding :)
 
 
-This repository is an adaptation of the repository created by (Kevin Tang)[https://github.com/kmtang] and used for the analysis of differences between nutrient density and adult-male equivalent metrics using Malawi's Fourth Integrated Household Survey (IHS4) (https://doi.org/10.48529/g2p9-9r19)
+This repository is an adaptation of the repository created by [Kevin Tang](https://github.com/kmtang) and used for the analysis of differences between nutrient density and adult-male equivalent metrics using Malawi's Fourth Integrated Household Survey (IHS4) (https://doi.org/10.48529/g2p9-9r19)
